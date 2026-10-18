@@ -61,7 +61,34 @@
 - **タイブレーク規則**: 同率スコアの場合は**先に登録したプレイヤーが1位、後から登録したプレイヤーが2位（先着順）**。
 - **👑 1位の配置を復元**: ボタンを1クリックするだけで、1位のプレイヤーの配置が盤面にそのまま復元。
 - **管理者保護モード**: パスコード `1827` または `?admin=1827` で管理者認証を行うと、個別スコアの削除ボタン（🗑️）が利用可能。
-- **Firebase Firestore 連携対応**: `js/firebase-config.js` に設定を入力することで、オンラインリアルタイムランキングに即時移行可能。
+- **Firebase Firestore 連携対応（世界リアルタイム同期）**:
+  - `js/firebase-config.js` に設定を入力することで、オンラインリアルタイムランキングに即時移行可能。
+  - 未設定時は自動的にブラウザローカル保存モード（localStorage）で動作し、UI上の「⚠️ ローカル保存中」バッジからワンクリックで設定案内を確認できます。
+
+#### 🌐 世界リアルタイム同期の有効化手順（無料・所要3分）
+1. **Firebase プロジェクト作成**:
+   - [Firebase Console](https://console.firebase.google.com/) にアクセスし、「プロジェクトを追加」（無料のSparkプラン・クレカ不要）。
+2. **Cloud Firestore データベース作成**:
+   - 左メニュー「構築」→「Firestore Database」→「データベースの作成」。
+   - セキュリティルールは「**テストモードで開始**」を選択し、ロケーションは「`asia-northeast1` (東京)」などを選択。
+3. **セキュリティルールの設定**:
+   - 「Firestore Database」→「ルール」タブを開き、以下のように設定して「公開」をクリック：
+   ```javascript
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /leaderboard/{challengeId}/scores/{scoreId} {
+         allow read, write: if true;
+       }
+     }
+   }
+   ```
+4. **Webアプリ設定の反映**:
+   - プロジェクト設定（歯車アイコン）→「マイアプリ」の「ウェブ（`</>`）」アイコンをクリックしてアプリを登録。
+   - 表示された `firebaseConfig`（apiKey, projectId 等）を `js/firebase-config.js` の `window.FIREBASE_CONFIG` に貼り付けます。
+5. **公開**:
+   - 変更をGitHubへPushすれば、GitHub Pages上で世界同期リーダーボードが即座に稼働します！
 
 ### 6. 世界累計来訪者カウンター
 - ヘッダー右上に Abacus Counter API 連携のリアルタイム来訪者数カウンターを搭載。
+

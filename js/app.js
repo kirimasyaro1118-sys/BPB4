@@ -69,6 +69,9 @@ class App {
 
         // 🌟 来訪者カウンター初期化 (backpack-battles-wiki と共通)
         this.initGlobalCounter();
+
+        // クラウドリーダーボードの初期ステータス反映
+        this.renderCloudStatus();
     }
 
     /**
@@ -188,7 +191,14 @@ class App {
             btnRestoreTop: document.getElementById('btnRestoreTop'),
             btnAdminAuth: document.getElementById('btnAdminAuth'),
             badgeAdminMode: document.getElementById('badgeAdminMode'),
-            btnAdminLogout: document.getElementById('btnAdminLogout')
+            btnAdminLogout: document.getElementById('btnAdminLogout'),
+
+            badgeCloudStatus: document.getElementById('badgeCloudStatus'),
+            modalCloudSync: document.getElementById('modalCloudSync'),
+            modalCloudSyncBackdrop: document.getElementById('modalCloudSyncBackdrop'),
+            modalCloudSyncBody: document.getElementById('modalCloudSyncBody'),
+            btnModalCloudClose: document.getElementById('btnModalCloudClose'),
+            btnModalCloudDismiss: document.getElementById('btnModalCloudDismiss')
         };
 
         this.renderGridCells();
@@ -218,17 +228,45 @@ class App {
         // Challenges change listener
         this.challenges.onChange((ch) => {
             this.applyChallenge(ch);
+            if (this.leaderboard && ch) {
+                this.leaderboard.subscribeChallenge(ch.id);
+            }
+            this.renderLeaderboard();
         });
 
         // Leaderboard change listener
         this.leaderboard.onChange(() => {
             this.renderLeaderboard();
+            this.renderCloudStatus();
         });
+
+        // Cloud status badge click
+        if (this.dom.badgeCloudStatus) {
+            this.dom.badgeCloudStatus.addEventListener('click', () => {
+                this.openCloudSyncModal();
+            });
+        }
+
+        // Cloud sync guide modal close
+        if (this.dom.btnModalCloudClose) {
+            this.dom.btnModalCloudClose.addEventListener('click', () => this.closeCloudSyncModal());
+        }
+        if (this.dom.btnModalCloudDismiss) {
+            this.dom.btnModalCloudDismiss.addEventListener('click', () => this.closeCloudSyncModal());
+        }
+        if (this.dom.modalCloudSyncBackdrop) {
+            this.dom.modalCloudSyncBackdrop.addEventListener('click', () => this.closeCloudSyncModal());
+        }
 
         // Select challenge
         this.dom.selectChallenge.addEventListener('change', (e) => {
             this.grid.clear();
-            this.challenges.setActiveChallenge(e.target.value);
+            const chId = e.target.value;
+            this.challenges.setActiveChallenge(chId);
+            if (this.leaderboard) {
+                this.leaderboard.subscribeChallenge(chId);
+            }
+            this.renderLeaderboard();
         });
 
         // Speed select: 戦闘中であっても即座に新しい速度へスムーズに切り替わる
@@ -1698,6 +1736,9 @@ class App {
         const rankings = this.leaderboard.getRankings(ch.id);
         const isAdmin = this.leaderboard.isAdmin();
 
+        // クラウドステータスバッジの更新
+        this.renderCloudStatus();
+
         // 管理者UIのトグル状態更新
         if (this.dom.btnAdminAuth) {
             this.dom.btnAdminAuth.style.display = isAdmin ? 'none' : 'inline-block';
@@ -1756,6 +1797,134 @@ class App {
 
             this.dom.leaderboardList.appendChild(div);
         });
+    }
+
+    /**
+     * クラウド同期ステータスバッジの描画
+     */
+    renderCloudStatus() {
+        if (!this.dom.badgeCloudStatus || !this.leaderboard) return;
+        const statusObj = this.leaderboard.getCloudStatus();
+        this.dom.badgeCloudStatus.className = `badge-cloud-status status-${statusObj.status}`;
+
+        if (statusObj.status === 'connected') {
+            this.dom.badgeCloudStatus.innerHTML = `🌐 世界同期中`;
+            this.dom.badgeCloudStatus.title = '世界中のプレイヤーとスコアがリアルタイム同期されています（クリックで詳細）';
+        } else if (statusObj.status === 'connecting') {
+            this.dom.badgeCloudStatus.innerHTML = `🔄 接続中...`;
+            this.dom.badgeCloudStatus.title = 'クラウドサーバー（Firestore）に接続しています...';
+        } else if (statusObj.status === 'error') {
+            this.dom.badgeCloudStatus.innerHTML = `❌ 同期エラー`;
+            this.dom.badgeCloudStatus.title = `同期エラー: ${statusObj.message || '詳細を確認'}（クリック）`;
+        } else {
+            this.dom.badgeCloudStatus.innerHTML = `⚠️ ローカル保存中`;
+            this.dom.badgeCloudStatus.title = 'お使いのブラウザ内部にのみ保存されています。クリックして世界公開の設定方法を確認';
+        }
+    }
+
+    /**
+     * クラウド同期案内モーダルを開く
+     */
+    openCloudSyncModal() {
+        if (!this.dom.modalCloudSync) return;
+        const statusObj = this.leaderboard ? this.leaderboard.getCloudStatus() : { status: 'local' };
+
+        let contentHtml = '';
+        if (statusObj.status === 'connected') {
+            contentHtml = `
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+                    <div style="display: flex; align-items: center; gap: 8px; color: #34d399; font-weight: 700; font-size: 14px; margin-bottom: 4px;">
+                        <span>✅ 世界リアルタイム共有が稼働中</span>
+                    </div>
+                    <div style="color: #cbd5e1; font-size: 12px; line-height: 1.5;">
+                        Firebase Firestore クラウドデータベースと接続されています。<br>
+                        あなたが登録したスコアや、他のプレイヤーが世界中から登録したスコアは、リアルタイムに全ユーザーの画面に自動同期されます！
+                    </div>
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+                    ・同率スコア時は、先に登録したプレイヤーが上位（先着順）となります。<br>
+                    ・Firestoreのスコアはブラウザにもキャッシュされるため、オフライン時でも高速に読み込まれます。<br>
+                    ・悪質なスコアは管理者パスコードで個別に削除可能です。
+                </div>
+            `;
+        } else if (statusObj.status === 'error') {
+            contentHtml = `
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+                    <div style="display: flex; align-items: center; gap: 8px; color: #f87171; font-weight: 700; font-size: 14px; margin-bottom: 4px;">
+                        <span>❌ クラウド同期エラーが発生しました</span>
+                    </div>
+                    <div style="color: #cbd5e1; font-size: 12px; line-height: 1.5;">
+                        ${statusObj.message || 'Firebase Firestoreへのアクセスに失敗しました。'}
+                    </div>
+                </div>
+                <div style="background: var(--bg-panel-sub); padding: 12px; border-radius: 6px; font-size: 12px; color: var(--text-primary); line-height: 1.6;">
+                    <strong>考えられる原因と対処法:</strong><br>
+                    1. <strong>Firestoreのセキュリティルールで拒否されている場合</strong>:<br>
+                    Firebase Console の「Firestore Database」→「ルール」タブで、読み書きが許可されているか確認してください。<br>
+                    <pre style="background: #0f172a; padding: 8px; border-radius: 4px; margin: 8px 0; font-size: 11px; overflow-x: auto; color: #67e8f9;">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /leaderboard/{challengeId}/scores/{scoreId} {
+      allow read, write: if true;
+    }
+  }
+}</pre>
+                    2. <strong>APIキーやプロジェクトIDの誤り</strong>:<br>
+                    <code>js/firebase-config.js</code> に貼り付けた設定値が正しいかご確認ください。
+                </div>
+            `;
+        } else {
+            contentHtml = `
+                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+                    <div style="display: flex; align-items: center; gap: 8px; color: #fbbf24; font-weight: 700; font-size: 14px; margin-bottom: 4px;">
+                        <span>⚠️ 現在、個人ローカル保存モードです</span>
+                    </div>
+                    <div style="color: #cbd5e1; font-size: 12px; line-height: 1.5;">
+                        Firebase Firestore（無料クラウドDB）が設定されていないため、スコアはお使いのブラウザ内部（localStorage）にのみ保存されています。<br>
+                        <strong>そのため、他の人が追加したスコアは反映されず、自分のスコアも世界に公開されていません。</strong>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 12px;">
+                    <strong style="color: #67e8f9; font-size: 13px;">🚀 世界ランキングに公開する3ステップ（所要3分・完全無料）</strong>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12px; color: var(--text-primary); line-height: 1.5;">
+                    <div style="background: var(--bg-panel-sub); padding: 10px 12px; border-radius: 6px; border-left: 3px solid #38bdf8;">
+                        <strong>① Firebase Console で無料プロジェクトを作成</strong><br>
+                        <a href="https://console.firebase.google.com/" target="_blank" rel="noopener" style="color: #38bdf8; text-decoration: underline;">https://console.firebase.google.com/</a> にアクセスし、「プロジェクトを追加」を押します（クレジットカード不要・無料プランSparkでOK）。
+                    </div>
+                    <div style="background: var(--bg-panel-sub); padding: 10px 12px; border-radius: 6px; border-left: 3px solid #38bdf8;">
+                        <strong>② Cloud Firestore データベースを作成</strong><br>
+                        左メニュー「構築」→「Firestore Database」を選び、「データベースの作成」を押します。<br>
+                        最初のルールは「<strong>テストモードで開始</strong>」を選び、ロケーションは「asia-northeast1 (東京)」などを推奨します。
+                    </div>
+                    <div style="background: var(--bg-panel-sub); padding: 10px 12px; border-radius: 6px; border-left: 3px solid #38bdf8;">
+                        <strong>③ Webアプリ設定を <code>js/firebase-config.js</code> に貼り付け</strong><br>
+                        プロジェクト概要の歯車アイコン「プロジェクトの設定」→「マイアプリ」の「ウェブ（&lt;/&gt;）」を追加します。<br>
+                        表示された <code>firebaseConfig</code> オブジェクトの各項目を、プロジェクト内の <code>js/firebase-config.js</code> に貼り付けて保存し、GitHubにPushすれば世界共有が即時有効化されます！
+                    </div>
+                </div>
+
+                <div style="margin-top: 14px; padding: 10px; background: rgba(56, 189, 248, 0.08); border-radius: 6px; font-size: 11px; color: #94a3b8;">
+                    💡 詳しい手順やFirestoreのルール設定は <code>README.md</code> にも分かりやすくまとめてあります。
+                </div>
+            `;
+        }
+
+        if (this.dom.modalCloudSyncBody) {
+            this.dom.modalCloudSyncBody.innerHTML = contentHtml;
+        }
+        this.dom.modalCloudSync.style.display = 'flex';
+    }
+
+    /**
+     * クラウド同期案内モーダルを閉じる
+     */
+    closeCloudSyncModal() {
+        if (this.dom.modalCloudSync) {
+            this.dom.modalCloudSync.style.display = 'none';
+        }
     }
 
     /**

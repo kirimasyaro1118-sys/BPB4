@@ -1,9 +1,9 @@
 // ========================================================
-// LeaderboardManager - リーダーボード管理
+// LeaderboardManager - リーダーボード管理（世界リアルタイム同期対応）
 // ========================================================
 // ・同率スコア時: 先に登録したプレイヤーが1位、後から登録したプレイヤーが2位（登録日時昇順）
 // ・管理者認証 (パスコード: 1827 / URLパラメータ: ?admin=1827) による個別削除保護
-// ・Firebase Firestore クラウド連携対応（window.FIREBASE_CONFIG 設定時に自動稼働）
+// ・Firebase Firestore クラウド連携対応（window.FIREBASE_CONFIG 設定時に世界同期自動稼働）
 
 class LeaderboardManager {
     constructor() {
@@ -12,6 +12,12 @@ class LeaderboardManager {
         this.records = this.loadRecords();
         this.listeners = [];
         this.firebaseDb = null;
+
+        // クラウド同期ステータス ('local' | 'connecting' | 'connected' | 'error')
+        this.cloudStatus = 'local';
+        this.cloudErrorMessage = '';
+        this.activeSubscriptions = new Set();
+        this.pendingSubscriptions = new Set();
 
         this.checkAdminInitial();
         this.initFirebase();
@@ -80,7 +86,22 @@ class LeaderboardManager {
     }
 
     notify() {
-        for (const l of this.listeners) l(this.records);
+        for (const l of this.listeners) {
+            try {
+                l(this.records, this.getCloudStatus());
+            } catch (err) {
+                console.error('Leaderboard listener error:', err);
+            }
+        }
+    }
+
+    getCloudStatus() {
+        return {
+            status: this.cloudStatus,
+            message: this.cloudErrorMessage,
+            isConnected: this.cloudStatus === 'connected',
+            isConfigured: !!(typeof window !== 'undefined' && window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.projectId)
+        };
     }
 
     loadRecords() {
@@ -110,7 +131,7 @@ class LeaderboardManager {
         } catch (e) {
             console.warn('リーダーボードの読み込みエラー:', e);
         }
-        return {}; // { challengeId: [ { id, name, heat, mana, staminaMisses, gridData, createdAt, timestamp } ] }
+        return {}; // { challengeId: [ { id, playerName, heat, mana, staminaMisses, gridData, createdAt, timestamp } ] }
     }
 
     saveRecords() {
@@ -149,8 +170,60 @@ class LeaderboardManager {
             const timeA = getTime(a);
             const timeB = getTime(b);
             if (timeA !== timeB) return timeA - timeB;
-            return a.id.localeCompare(b.id);
+            return (a.id || '').localeCompare(b.id || '');
         });
+    }
+
+    /**
+     * 指定された設問のFirestoreリアルタイム購読を開始
+     */
+    subscribeChallenge(challengeId) {
+        if (!challengeId) return;
+
+        if (!this.firebaseDb) {
+            // Firestore準備前の場合は保留リストに追加
+            this.pendingSubscriptions.add(challengeId);
+            return;
+        }
+
+        if (this.activeSubscriptions.has(challengeId)) {
+            return; // 既に購読中
+        }
+
+        this.activeSubscriptions.add(challengeId);
+
+        try {
+            this.firebaseDb.collection('leaderboard').doc(challengeId).collection('scores')
+                .onSnapshot(snapshot => {
+                    const scores = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data && (data.heat !== undefined || data.id)) {
+                            scores.push(data);
+                        }
+                    });
+
+                    this.records[challengeId] = scores;
+                    this.sortRecords(challengeId);
+
+                    // 上位20件
+                    if (this.records[challengeId].length > 20) {
+                        this.records[challengeId] = this.records[challengeId].slice(0, 20);
+                    }
+
+                    this.saveRecords();
+                    this.notify();
+                }, err => {
+                    console.warn(`[Firestore] 購読エラー (${challengeId}):`, err);
+                    if (err.code === 'permission-denied') {
+                        this.cloudStatus = 'error';
+                        this.cloudErrorMessage = 'セキュリティルールによりアクセスが拒否されました。Firebase Consoleでルールを確認してください。';
+                        this.notify();
+                    }
+                });
+        } catch (e) {
+            console.warn(`[Firestore] 購読初期化例外 (${challengeId}):`, e);
+        }
     }
 
     /**
@@ -168,29 +241,38 @@ class LeaderboardManager {
             heat: simResult.finalHeat,
             mana: simResult.finalMana,
             staminaMisses: simResult.staminaMisses,
-            totalBuffs: Object.values(simResult.buffs).reduce((a, b) => a + b, 0),
+            totalBuffs: Object.values(simResult.buffs || {}).reduce((a, b) => a + b, 0),
             gridData: JSON.parse(JSON.stringify(gridData)), // ディープコピー
             createdAt: now,
             timestamp: new Date().toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
         };
 
+        // ローカルに仮追加（即時UI反映用）
         this.records[challengeId].push(entry);
-
-        // ソート: ヒート数降順 -> 空振りミス昇順 -> 先着順
         this.sortRecords(challengeId);
-
-        // 上位20件まで保持
         if (this.records[challengeId].length > 20) {
             this.records[challengeId] = this.records[challengeId].slice(0, 20);
         }
-
         this.saveRecords();
 
         // Firebase Firestore へ送信（設定されている場合）
         if (this.firebaseDb) {
             this.firebaseDb.collection('leaderboard').doc(challengeId).collection('scores').doc(entry.id).set(entry)
-                .catch(err => console.error('Firestore 保存エラー:', err));
+                .then(() => {
+                    console.log(`[Firestore] スコアを世界共有サーバーに登録しました: ${entry.playerName} (ヒート: ${entry.heat})`);
+                })
+                .catch(err => {
+                    console.error('[Firestore] スコア保存エラー:', err);
+                    if (err.code === 'permission-denied') {
+                        alert('【Firestore接続エラー】セキュリティルールにより保存が拒否されました。\nFirebase Consoleで読み書きルールを許可してください。');
+                    }
+                });
+        } else {
+            console.log('[Leaderboard] ローカルストレージにスコアを保存しました（Firebase未設定）');
         }
+
+        // 未購読であれば購読開始
+        this.subscribeChallenge(challengeId);
 
         this.notify();
         return entry;
@@ -215,7 +297,10 @@ class LeaderboardManager {
             // Firebase Firestore からも削除（設定されている場合）
             if (this.firebaseDb) {
                 this.firebaseDb.collection('leaderboard').doc(challengeId).collection('scores').doc(scoreId).delete()
-                    .catch(err => console.error('Firestore 削除エラー:', err));
+                    .then(() => {
+                        console.log(`[Firestore] スコアを削除しました: ${scoreId}`);
+                    })
+                    .catch(err => console.error('[Firestore] スコア削除エラー:', err));
             }
 
             this.notify();
@@ -228,6 +313,9 @@ class LeaderboardManager {
      * 特定の設問のランキング取得
      */
     getRankings(challengeId) {
+        if (!this.activeSubscriptions.has(challengeId)) {
+            this.subscribeChallenge(challengeId);
+        }
         return this.records[challengeId] || [];
     }
 
@@ -243,59 +331,114 @@ class LeaderboardManager {
      * 特定の設問のスコア履歴をリセット
      */
     clearChallengeScores(challengeId) {
+        if (!this.isAdmin()) {
+            alert('リセットには管理者認証が必要です。');
+            return false;
+        }
+
+        const entriesToDelete = [...(this.records[challengeId] || [])];
         delete this.records[challengeId];
         this.saveRecords();
+
+        if (this.firebaseDb && entriesToDelete.length > 0) {
+            entriesToDelete.forEach(entry => {
+                if (entry.id) {
+                    this.firebaseDb.collection('leaderboard').doc(challengeId).collection('scores').doc(entry.id).delete()
+                        .catch(err => console.error('[Firestore] リセット削除エラー:', err));
+                }
+            });
+        }
+
         this.notify();
+        return true;
+    }
+
+    /**
+     * 既知の全設問IDをFirestoreリアルタイム購読
+     */
+    subscribeAllKnownChallenges() {
+        const ids = new Set();
+
+        // 1. コード内の既知ID
+        if (typeof window !== 'undefined' && window.DEFAULT_CHALLENGES) {
+            window.DEFAULT_CHALLENGES.forEach(c => ids.add(c.id));
+        }
+        ['p1', 'pattern_2', 'pattern_3', 'free_all', 'bag_limit', 'custom_challenge'].forEach(id => ids.add(id));
+
+        // 2. ローカルストレージに保存されている設問ID
+        try {
+            const rawChallenges = localStorage.getItem('bpb_eggscalibur_challenges_v1');
+            if (rawChallenges) {
+                const list = JSON.parse(rawChallenges);
+                if (Array.isArray(list)) list.forEach(c => c.id && ids.add(c.id));
+            }
+        } catch (e) {}
+
+        // 3. 現在のローカルスコアレコードの全キー
+        Object.keys(this.records).forEach(id => ids.add(id));
+
+        // 4. 保留中の購読ID
+        this.pendingSubscriptions.forEach(id => ids.add(id));
+        this.pendingSubscriptions.clear();
+
+        // 購読実行
+        ids.forEach(chId => this.subscribeChallenge(chId));
     }
 
     /**
      * Firebase Firestore 連携の初期化
-     * window.FIREBASE_CONFIG.projectId が設定されていればクラウド同期を行う
      */
     initFirebase() {
-        const config = window.FIREBASE_CONFIG;
+        const config = (typeof window !== 'undefined') ? window.FIREBASE_CONFIG : null;
         if (!config || !config.projectId) {
             // Firebase 未設定の場合はローカルストレージモード
+            this.cloudStatus = 'local';
+            console.log('Firebase設定が未登録のため、ローカルストレージモードで動作します');
             return;
         }
 
+        this.cloudStatus = 'connecting';
+
         const onSdkReady = () => {
             try {
-                if (!window.firebase.apps.length) {
+                if (!window.firebase.apps || !window.firebase.apps.length) {
                     window.firebase.initializeApp(config);
                 }
                 this.firebaseDb = window.firebase.firestore();
-                console.log('Firebase Firestore クラウドリーダーボードに接続しました');
+                this.cloudStatus = 'connected';
+                this.cloudErrorMessage = '';
+                console.log('🌐 Firebase Firestore クラウドリーダーボードに接続しました！世界共有が有効です。');
 
-                // 設問リストのリアルタイム購読
-                ['free_all', 'bag_limit', 'custom_challenge'].forEach(chId => {
-                    this.firebaseDb.collection('leaderboard').doc(chId).collection('scores')
-                        .onSnapshot(snapshot => {
-                            const scores = [];
-                            snapshot.forEach(doc => {
-                                scores.push(doc.data());
-                            });
-                            this.records[chId] = scores;
-                            this.sortRecords(chId);
-                            this.saveRecords();
-                            this.notify();
-                        }, err => {
-                            console.warn(`Firestore 購読エラー (${chId}):`, err);
-                        });
-                });
+                // 既知のすべての設問のリアルタイム購読を開始
+                this.subscribeAllKnownChallenges();
+
+                this.notify();
             } catch (e) {
                 console.warn('Firebase 初期化エラー:', e);
+                this.cloudStatus = 'error';
+                this.cloudErrorMessage = e.message || '初期化に失敗しました';
+                this.notify();
             }
         };
 
-        if (typeof window.firebase === 'undefined') {
+        if (typeof window.firebase === 'undefined' || typeof window.firebase.firestore === 'undefined') {
             const scriptApp = document.createElement('script');
             scriptApp.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js';
             scriptApp.onload = () => {
                 const scriptFs = document.createElement('script');
                 scriptFs.src = 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js';
                 scriptFs.onload = onSdkReady;
+                scriptFs.onerror = () => {
+                    this.cloudStatus = 'error';
+                    this.cloudErrorMessage = 'Firebase Firestore SDKの読み込みに失敗しました。';
+                    this.notify();
+                };
                 document.head.appendChild(scriptFs);
+            };
+            scriptApp.onerror = () => {
+                this.cloudStatus = 'error';
+                this.cloudErrorMessage = 'Firebase SDKの読み込みに失敗しました。';
+                this.notify();
             };
             document.head.appendChild(scriptApp);
         } else {
