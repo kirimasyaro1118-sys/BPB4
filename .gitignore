@@ -1,0 +1,9 @@
+.agents/
+.vscode/
+check_token.ps1
+publish.ps1
+debug_click.js
+credentials.json
+token.json
+.DS_Store
+Thumbs.db
