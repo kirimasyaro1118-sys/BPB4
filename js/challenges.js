@@ -1,56 +1,59 @@
+// Backpack Battles - エッグスシミュ 設問・チャレンジ定義 (challenges.js)
+// 管理画面（admin.html）から自動生成・エクスポートされた最新の設問データです。
+
 const DEFAULT_CHALLENGES = [
     {
-        id: 'pattern_1',
-        name: 'パターン1: エッグス基礎検証（全解放盤面）',
-        description: 'バッグなしの全63マスで、エッグスカリバー・トウガラシ・バナナ・マナオーブの基本シナジーとヒート速度を検証します。',
-        mode: 'free',
-        itemLimits: {
-            eggscalibur: 1,
-            chili: 8,
-            banana: 4,
-            cupcake: 2,
-            mana_orb: 3
+        "id": "p1",
+        "name": "パターン1",
+        "description": "",
+        "mode": "free",
+        "itemLimits": {
+            "eggscalibur": 1,
+            "chili": 6,
+            "banana": 2,
+            "cupcake": 0,
+            "mana_orb": 2
         },
-        bagLimits: {
-            leather_bag: 0,
-            fanny_pack: 0,
-            stamina_bag: 0
+        "bagLimits": {
+            "leather_bag": 0,
+            "fanny_pack": 0,
+            "stamina_bag": 0
         }
     },
     {
-        id: 'pattern_2',
-        name: 'パターン2: バッグ構築・スタミナ制限チャレンジ',
-        description: 'ウエストポーチとスタミナバッグを駆使し、限られたスペースでエッグスカリバーのCD短縮とスタミナを両立させる構成。',
-        mode: 'bag',
-        itemLimits: {
-            eggscalibur: 1,
-            chili: 6,
-            banana: 3,
-            cupcake: 3,
-            mana_orb: 2
+        "id": "pattern_2",
+        "name": "パターン2",
+        "description": "",
+        "mode": "free",
+        "itemLimits": {
+            "eggscalibur": 1,
+            "chili": 4,
+            "banana": 2,
+            "cupcake": 2,
+            "mana_orb": 2
         },
-        bagLimits: {
-            leather_bag: 4,  // 革のカバン 4個 (2x2が4つ = 16マス)
-            fanny_pack: 3,   // ウエストポーチ 3個 (2マスx3 = 6マス)
-            stamina_bag: 2   // スタミナバッグ 2個 (3マスx2 = 6マス)
+        "bagLimits": {
+            "leather_bag": 0,
+            "fanny_pack": 0,
+            "stamina_bag": 0
         }
     },
     {
-        id: 'pattern_3',
-        name: 'パターン3: マナオーブ特化・高速ヒート爆発',
-        description: 'マナオーブを最大活用して35マナ到達（全バフ+3）を最速で狙い、ヒートを極限まで加速させるハイレベル構成。',
-        mode: 'free',
-        itemLimits: {
-            eggscalibur: 2,
-            chili: 10,
-            banana: 6,
-            cupcake: 4,
-            mana_orb: 5
+        "id": "pattern_3",
+        "name": "パターン3",
+        "description": "",
+        "mode": "bag",
+        "itemLimits": {
+            "eggscalibur": 1,
+            "chili": 4,
+            "banana": 2,
+            "cupcake": 2,
+            "mana_orb": 2
         },
-        bagLimits: {
-            leather_bag: 0,
-            fanny_pack: 0,
-            stamina_bag: 0
+        "bagLimits": {
+            "leather_bag": 10,
+            "fanny_pack": 4,
+            "stamina_bag": 2
         }
     }
 ];
@@ -58,7 +61,7 @@ const DEFAULT_CHALLENGES = [
 class ChallengeManager {
     constructor() {
         this.storageKey = 'bpb_eggscalibur_challenges_v1';
-        this.activeChallengeId = 'pattern_1';
+        this.activeChallengeId = 'p1';
         this.challenges = this.loadChallenges();
         this.listeners = [];
 
@@ -147,7 +150,7 @@ class ChallengeManager {
 
     resetToDefaults() {
         this.challenges = [...DEFAULT_CHALLENGES];
-        this.activeChallengeId = 'pattern_1';
+        this.activeChallengeId = 'p1';
         this.saveChallenges();
         this.notify();
     }
@@ -158,4 +161,3 @@ if (typeof window !== 'undefined') {
     window.DEFAULT_CHALLENGES = DEFAULT_CHALLENGES;
     window.ChallengeManager = ChallengeManager;
 }
-
