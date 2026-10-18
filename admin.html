@@ -193,7 +193,10 @@
                 <p>エッグスシミュ - 設問（パターン）作成・上限ルール編集</p>
             </div>
         </div>
-        <div class="header-actions">
+        <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
+            <button id="btnExportChallengesJs" class="btn btn-success" style="background: linear-gradient(135deg, #059669, #047857); font-weight: 700; border-color: #10b981; box-shadow: 0 0 14px rgba(16, 185, 129, 0.45); padding: 8px 16px; cursor: pointer;" title="プロジェクトのjs/challenges.jsに上書き保存して、ネット公開（GitHub）に直接反映させます">
+                📥 ネット公開用 challenges.js を保存
+            </button>
             <a href="index.html" class="btn btn-primary" style="text-decoration: none;">← シミュレーター画面（パターン検証）へ戻る</a>
         </div>
     </header>
@@ -211,7 +214,10 @@
             </div>
 
             <div style="border-top: 1px solid var(--border-color); padding-top: 16px; display: flex; flex-direction: column; gap: 8px;">
-                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted);">設問データ管理</div>
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted);">設問データ管理・ネット公開</div>
+                <button class="btn btn-success" id="btnExportChallengesJsSide" style="background: linear-gradient(135deg, #059669, #047857); font-size: 12px; font-weight: 700; padding: 8px 12px; cursor: pointer;" title="プロジェクトのjs/challenges.jsに直接保存またはダウンロード">
+                    📥 ネット公開用 challenges.js を保存
+                </button>
                 <div style="display: flex; gap: 8px;">
                     <button class="btn" id="btnExportJson" style="flex: 1; font-size: 11px;">📥 JSON出力</button>
                     <button class="btn" id="btnImportJson" style="flex: 1; font-size: 11px;">📤 JSON読込</button>
@@ -349,8 +355,8 @@
     <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
 
     <!-- クラシックスクリプト読み込み (ローカルfile://でも確実に動作) -->
-    <script src="js/challenges.js?v=5"></script>
-    <script src="js/leaderboard.js?v=5"></script>
-    <script src="js/admin.js?v=5"></script>
+    <script src="js/challenges.js?v=42"></script>
+    <script src="js/leaderboard.js?v=42"></script>
+    <script src="js/admin.js?v=42"></script>
 </body>
 </html>

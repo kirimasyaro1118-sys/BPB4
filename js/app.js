@@ -338,6 +338,12 @@ class App {
         };
 
         window.addEventListener('pageshow', syncLatestPatterns);
+        window.addEventListener('focus', syncLatestPatterns);
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                syncLatestPatterns();
+            }
+        });
 
         // キーボード「R」でも回転可能（ドラッグ中、またはマウスホバー中のアイテム・バッグ）
         window.addEventListener('keydown', (e) => {

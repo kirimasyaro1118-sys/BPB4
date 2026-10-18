@@ -143,7 +143,9 @@
                 btnDelete: document.getElementById('btnDelete'),
                 btnClearScores: document.getElementById('btnClearScores'),
                 btnSave: document.getElementById('btnSave'),
-                btnSaveNew: document.getElementById('btnSaveNew')
+                btnSaveNew: document.getElementById('btnSaveNew'),
+                btnExportChallengesJs: document.getElementById('btnExportChallengesJs'),
+                btnExportChallengesJsSide: document.getElementById('btnExportChallengesJsSide')
             };
         }
 
@@ -189,6 +191,15 @@
                         this.dom.formBadgeMode.className = `badge mode-${e.target.value}`;
                     }
                 });
+            }
+
+            // ネット公開用 challenges.js エクスポート
+            const onExportChallenges = () => this.exportChallengesJs();
+            if (this.dom.btnExportChallengesJs) {
+                this.dom.btnExportChallengesJs.addEventListener('click', onExportChallenges);
+            }
+            if (this.dom.btnExportChallengesJsSide) {
+                this.dom.btnExportChallengesJsSide.addEventListener('click', onExportChallenges);
             }
 
             // JSON エクスポート / インポート
@@ -538,6 +549,151 @@
                 if (this.leaderboard) this.leaderboard.clearChallengeScores(q.id);
                 alert('スコア履歴を初期化しました。');
             }
+        }
+
+        async exportChallengesJs() {
+            const exportData = JSON.parse(JSON.stringify(this.challenges.challenges));
+            const initialId = exportData[0]?.id || 'pattern_1';
+
+            const jsContent = `// Backpack Battles - エッグスシミュ 設問・チャレンジ定義 (challenges.js)
+// 管理画面（admin.html）から自動生成・エクスポートされた最新の設問データです。
+
+const DEFAULT_CHALLENGES = ${JSON.stringify(exportData, null, 4)};
+
+class ChallengeManager {
+    constructor() {
+        this.storageKey = 'bpb_eggscalibur_challenges_v1';
+        this.activeChallengeId = '${initialId}';
+        this.challenges = this.loadChallenges();
+        this.listeners = [];
+
+        // 他タブでの更新をリアルタイム検知
+        window.addEventListener('storage', (e) => {
+            if (e.key === this.storageKey && e.newValue) {
+                try {
+                    this.challenges = JSON.parse(e.newValue);
+                    this.notify();
+                } catch (err) {
+                    console.warn('同期エラー:', err);
+                }
+            }
+        });
+    }
+
+    onChange(listener) {
+        this.listeners.push(listener);
+    }
+
+    notify() {
+        for (const l of this.listeners) l(this.getActiveChallenge());
+    }
+
+    loadChallenges() {
+        try {
+            const raw = localStorage.getItem(this.storageKey);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    return parsed;
+                }
+            }
+        } catch (e) {
+            console.warn('設問の読み込みエラー:', e);
+        }
+        return [...DEFAULT_CHALLENGES];
+    }
+
+    saveChallenges() {
+        try {
+            localStorage.setItem(this.storageKey, JSON.stringify(this.challenges));
+        } catch (e) {
+            console.error('設問の保存エラー:', e);
+        }
+    }
+
+    getActiveChallenge() {
+        return this.challenges.find(c => c.id === this.activeChallengeId) || this.challenges[0];
+    }
+
+    setActiveChallenge(id) {
+        if (this.challenges.some(c => c.id === id)) {
+            this.activeChallengeId = id;
+            try {
+                localStorage.setItem('bpb_eggscalibur_last_saved', id);
+            } catch (e) {
+                console.warn(e);
+            }
+            this.notify();
+        }
+    }
+
+    addOrUpdateChallenge(challenge) {
+        const idx = this.challenges.findIndex(c => c.id === challenge.id);
+        if (idx >= 0) {
+            this.challenges[idx] = challenge;
+        } else {
+            this.challenges.push(challenge);
+        }
+        this.saveChallenges();
+        this.activeChallengeId = challenge.id;
+        this.notify();
+    }
+
+    deleteChallenge(id) {
+        if (this.challenges.length <= 1) return false;
+        this.challenges = this.challenges.filter(c => c.id !== id);
+        this.saveChallenges();
+        if (this.activeChallengeId === id) {
+            this.activeChallengeId = this.challenges[0].id;
+        }
+        this.notify();
+        return true;
+    }
+
+    resetToDefaults() {
+        this.challenges = [...DEFAULT_CHALLENGES];
+        this.activeChallengeId = '${initialId}';
+        this.saveChallenges();
+        this.notify();
+    }
+}
+
+// グローバルスコープにも公開 (クラシックスクリプト対応)
+if (typeof window !== 'undefined') {
+    window.DEFAULT_CHALLENGES = DEFAULT_CHALLENGES;
+    window.ChallengeManager = ChallengeManager;
+}
+`;
+
+            // 1. Chrome / Edge 向け File System Access API (直接保存)
+            if ('showDirectoryPicker' in window) {
+                try {
+                    alert('プロジェクトフォルダ（eggscalibur-simulator）を選択してください。\\n\\n「js/challenges.js」に直接書き出され、自動的に上書き保存されます。');
+                    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                    const jsDirHandle = await dirHandle.getDirectoryHandle('js', { create: true });
+                    const challengesJsFileHandle = await jsDirHandle.getFileHandle('challenges.js', { create: true });
+                    const writable = await challengesJsFileHandle.createWritable();
+                    await writable.write(jsContent);
+                    await writable.close();
+
+                    alert('✨ プロジェクトの「js/challenges.js」への直接保存が完了しました！\\n\\nシミュレーター画面（index.html）およびWeb公開用（GitHub）の初期設問データが更新されました。');
+                    return;
+                } catch (err) {
+                    if (err.name === 'AbortError') return;
+                    console.warn('DirectoryPicker failed or declined, falling back to download:', err);
+                }
+            }
+
+            // 2. フォールバック: ファイルダウンロード
+            const blob = new Blob([jsContent], { type: 'text/javascript;charset=utf-8' });
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.href = URL.createObjectURL(blob);
+            downloadAnchor.download = 'challenges.js';
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            alert('「challenges.js」をダウンロードしました！\\n\\nこのファイルをプロジェクトフォルダの「js/challenges.js」に上書き保存してください。\\n（その後GitHubへ反映・公開すれば、Web上でも誰にでもこの設問が表示されるようになります）');
         }
 
         exportJson() {
