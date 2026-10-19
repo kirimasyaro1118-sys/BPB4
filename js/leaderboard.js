@@ -1,17 +1,24 @@
 // ========================================================
-// LeaderboardManager - リーダーボード管理（世界リアルタイム同期対応）
+// LeaderboardManager - リーダーボード管理（世界リアルタイム同期対応・セキュリティ強化版）
 // ========================================================
 // ・同率スコア時: 先に登録したプレイヤーが1位、後から登録したプレイヤーが2位（登録日時昇順）
-// ・管理者認証 (パスコード: 1827 / URLパラメータ: ?admin=1827) による個別削除保護
+// ・管理者認証: SHA-256 ハッシュ照合による保護（平文非公開）
 // ・Firebase Firestore クラウド連携対応（window.FIREBASE_CONFIG 設定時に世界同期自動稼働）
 
 class LeaderboardManager {
     constructor() {
         this.storageKey = 'bpb_eggscalibur_leaderboard_v1';
-        this.adminPasscode = (typeof window !== 'undefined' && window.ADMIN_PASSCODE) ? window.ADMIN_PASSCODE : '1827';
+        this.authStorageKey = 'bpb_admin_auth_hash_v2';
+
+        // 管理者パスコードの SHA-256 ハッシュ値（平文パスコードはコード上に保持しない）
+        this.adminHash = '7020e57625b6a6695ffd51ed494fbfc56c699eaceca4e77bf7ea590c7ebf3879';
+
         this.records = this.loadRecords();
         this.listeners = [];
         this.firebaseDb = null;
+
+        // レートリミット（連投防止）用タイムスタンプ
+        this.lastSubmitTime = 0;
 
         // クラウド同期ステータス ('local' | 'connecting' | 'connected' | 'error')
         this.cloudStatus = 'local';
@@ -19,32 +26,56 @@ class LeaderboardManager {
         this.activeSubscriptions = new Set();
         this.pendingSubscriptions = new Set();
 
-        this.checkAdminInitial();
+        this.cleanLegacyStorageAndUrl();
         this.initFirebase();
     }
 
-    checkAdminInitial() {
+    /**
+     * 旧バージョンの平文認証情報およびURLパラメータの安全な消去
+     */
+    cleanLegacyStorageAndUrl() {
         try {
-            if (typeof window !== 'undefined' && window.location) {
-                const params = new URLSearchParams(window.location.search);
-                if (params.get('admin') === this.adminPasscode) {
-                    localStorage.setItem('bpb_admin_pass', this.adminPasscode);
+            // 旧バージョンの平文パスコードストレージを安全に破棄
+            localStorage.removeItem('bpb_admin_pass');
+
+            // URLパラメータ ?admin= が万一付加されていた場合は即時消去（URL共有や履歴からの漏洩防止）
+            if (typeof window !== 'undefined' && window.location && window.history && window.history.replaceState) {
+                const url = new URL(window.location);
+                if (url.searchParams.has('admin')) {
+                    url.searchParams.delete('admin');
+                    window.history.replaceState({}, '', url.toString());
                 }
             }
         } catch (e) {
-            // URLパラメータ取得不可環境（エラー抑制）
+            // エラー抑制
         }
     }
 
     /**
-     * 管理者認証状態の判定（URLパラメータまたは保存済みパスコード）
+     * 文字列の SHA-256 ハッシュ値を計算 (Web Crypto API)
+     */
+    async computeHash(text) {
+        if (typeof crypto !== 'undefined' && crypto.subtle) {
+            try {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(text);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch (e) {
+                console.warn('Web Crypto hash error:', e);
+            }
+        }
+        return '';
+    }
+
+    /**
+     * 管理者認証状態の判定（保存済みハッシュとの照合）
      */
     isAdmin() {
         try {
-            if (typeof window !== 'undefined') {
-                const params = new URLSearchParams(window.location.search);
-                if (params.get('admin') === this.adminPasscode) return true;
-                return localStorage.getItem('bpb_admin_pass') === this.adminPasscode;
+            if (typeof localStorage !== 'undefined') {
+                return localStorage.getItem(this.authStorageKey) === this.adminHash;
             }
         } catch (e) {
             return false;
@@ -53,11 +84,15 @@ class LeaderboardManager {
     }
 
     /**
-     * パスコードによる管理者認証
+     * パスコードによる管理者認証 (SHA-256 ハッシュ照合)
      */
-    setAdminPasscode(input) {
-        if (input === this.adminPasscode) {
-            localStorage.setItem('bpb_admin_pass', this.adminPasscode);
+    async setAdminPasscode(input) {
+        if (!input || typeof input !== 'string') return false;
+        const hash = await this.computeHash(input.trim());
+        if (hash === this.adminHash) {
+            try {
+                localStorage.setItem(this.authStorageKey, this.adminHash);
+            } catch (e) {}
             this.notify();
             return true;
         }
@@ -68,15 +103,9 @@ class LeaderboardManager {
      * 管理者ログアウト
      */
     logoutAdmin() {
-        localStorage.removeItem('bpb_admin_pass');
         try {
-            if (window.history && window.history.replaceState) {
-                const url = new URL(window.location);
-                if (url.searchParams.has('admin')) {
-                    url.searchParams.delete('admin');
-                    window.history.replaceState({}, '', url.toString());
-                }
-            }
+            localStorage.removeItem(this.authStorageKey);
+            localStorage.removeItem('bpb_admin_pass');
         } catch (e) {}
         this.notify();
     }
@@ -181,13 +210,12 @@ class LeaderboardManager {
         if (!challengeId) return;
 
         if (!this.firebaseDb) {
-            // Firestore準備前の場合は保留リストに追加
             this.pendingSubscriptions.add(challengeId);
             return;
         }
 
         if (this.activeSubscriptions.has(challengeId)) {
-            return; // 既に購読中
+            return;
         }
 
         this.activeSubscriptions.add(challengeId);
@@ -198,7 +226,8 @@ class LeaderboardManager {
                     const scores = [];
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        if (data && (data.heat !== undefined || data.id)) {
+                        // データ検証（チート・不正データのフィルタリング）
+                        if (data && typeof data.heat === 'number' && !isNaN(data.heat) && data.heat >= 0 && data.heat <= 300) {
                             scores.push(data);
                         }
                     });
@@ -217,7 +246,7 @@ class LeaderboardManager {
                     console.warn(`[Firestore] 購読エラー (${challengeId}):`, err);
                     if (err.code === 'permission-denied') {
                         this.cloudStatus = 'error';
-                        this.cloudErrorMessage = 'セキュリティルールによりアクセスが拒否されました。Firebase Consoleでルールを確認してください。';
+                        this.cloudErrorMessage = 'セキュリティルールによりアクセスが拒否されました。';
                         this.notify();
                     }
                 });
@@ -227,22 +256,56 @@ class LeaderboardManager {
     }
 
     /**
-     * 新しいスコアを登録
+     * 新しいスコアを登録（バリデーション＆レートリミット保護付き）
      */
     addScore(challengeId, playerName, simResult, gridData) {
+        if (!challengeId || !simResult) return null;
+
+        // 1. 連投防止レートリミット（3秒以内の連打・スパム防止）
+        const now = Date.now();
+        if (now - this.lastSubmitTime < 3000) {
+            alert('スコア登録の間隔が短すぎます。数秒お待ちください。');
+            return null;
+        }
+        this.lastSubmitTime = now;
+
+        // 2. スコア値のバリデーション（異常値・改ざんの遮断）
+        const heat = Number(simResult.finalHeat);
+        if (isNaN(heat) || heat < 0 || heat > 300) {
+            alert('無効なスコアデータが検出されました。');
+            return null;
+        }
+
+        // 3. プレイヤー名のサニタイズ（制御文字除去、最大12文字）
+        let safeName = String(playerName || '名無し職人').trim().replace(/[\x00-\x1F\x7F]/g, '');
+        if (safeName.length > 12) safeName = safeName.substring(0, 12);
+        if (!safeName) safeName = '名無し職人';
+
+        // 4. gridData のサイズ検証（巨大ペイロードによるDoS防止）
+        let safeGrid = null;
+        try {
+            const serialized = JSON.stringify(gridData);
+            if (serialized.length > 30000) {
+                alert('配置データのサイズが大きすぎます。');
+                return null;
+            }
+            safeGrid = JSON.parse(serialized);
+        } catch (e) {
+            safeGrid = {};
+        }
+
         if (!this.records[challengeId]) {
             this.records[challengeId] = [];
         }
 
-        const now = Date.now();
         const entry = {
-            id: 'score_' + now + '_' + Math.random().toString(36).substr(2, 4),
-            playerName: playerName || '名無し職人',
-            heat: simResult.finalHeat,
-            mana: simResult.finalMana,
-            staminaMisses: simResult.staminaMisses,
-            totalBuffs: Object.values(simResult.buffs || {}).reduce((a, b) => a + b, 0),
-            gridData: JSON.parse(JSON.stringify(gridData)), // ディープコピー
+            id: 'score_' + now + '_' + Math.random().toString(36).substr(2, 6),
+            playerName: safeName,
+            heat: heat,
+            mana: Math.max(0, Number(simResult.finalMana) || 0),
+            staminaMisses: Math.max(0, Number(simResult.staminaMisses) || 0),
+            totalBuffs: Object.values(simResult.buffs || {}).reduce((a, b) => a + (Number(b) || 0), 0),
+            gridData: safeGrid,
             createdAt: now,
             timestamp: new Date().toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
         };
@@ -264,11 +327,9 @@ class LeaderboardManager {
                 .catch(err => {
                     console.error('[Firestore] スコア保存エラー:', err);
                     if (err.code === 'permission-denied') {
-                        alert('【Firestore接続エラー】セキュリティルールにより保存が拒否されました。\nFirebase Consoleで読み書きルールを許可してください。');
+                        alert('【Firestore接続エラー】セキュリティルールにより保存が拒否されました。\nFirebase Consoleでルールを確認してください。');
                     }
                 });
-        } else {
-            console.log('[Leaderboard] ローカルストレージにスコアを保存しました（Firebase未設定）');
         }
 
         // 未購読であれば購読開始
@@ -283,7 +344,7 @@ class LeaderboardManager {
      */
     deleteScore(challengeId, scoreId) {
         if (!this.isAdmin()) {
-            alert('スコアの削除には管理者認証（パスコード: 1827）が必要です。');
+            alert('スコアの削除には管理者認証が必要です。');
             return false;
         }
 
@@ -391,9 +452,7 @@ class LeaderboardManager {
     initFirebase() {
         const config = (typeof window !== 'undefined') ? window.FIREBASE_CONFIG : null;
         if (!config || !config.projectId) {
-            // Firebase 未設定の場合はローカルストレージモード
             this.cloudStatus = 'local';
-            console.log('Firebase設定が未登録のため、ローカルストレージモードで動作します');
             return;
         }
 
@@ -407,7 +466,7 @@ class LeaderboardManager {
                 this.firebaseDb = window.firebase.firestore();
                 this.cloudStatus = 'connected';
                 this.cloudErrorMessage = '';
-                console.log('🌐 Firebase Firestore クラウドリーダーボードに接続しました！世界共有が有効です。');
+                console.log('🌐 Firebase Firestore クラウドリーダーボードに接続しました！');
 
                 // 既知のすべての設問のリアルタイム購読を開始
                 this.subscribeAllKnownChallenges();

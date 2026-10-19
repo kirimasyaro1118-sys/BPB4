@@ -300,10 +300,11 @@ class App {
 
         // 管理者認証ボタン (🔒)
         if (this.dom.btnAdminAuth) {
-            this.dom.btnAdminAuth.addEventListener('click', () => {
+            this.dom.btnAdminAuth.addEventListener('click', async () => {
                 const pass = prompt('管理者パスコードを入力してください:');
                 if (pass === null) return;
-                if (this.leaderboard.setAdminPasscode(pass.trim())) {
+                const ok = await this.leaderboard.setAdminPasscode(pass.trim());
+                if (ok) {
                     alert('管理者モードが有効になりました（スコア個別削除が可能です）');
                 } else {
                     alert('パスコードが正しくありません。');
@@ -1731,6 +1732,16 @@ class App {
         alert(`スコア [ヒート: ${this.lastSimResult.finalHeat}] をランキングに登録しました！`);
     }
 
+    escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     renderLeaderboard() {
         const ch = this.challenges.getActiveChallenge();
         const rankings = this.leaderboard.getRankings(ch.id);
@@ -1767,9 +1778,12 @@ class App {
                 ? `<button class="btn btn-delete-score" style="padding: 2px 5px; font-size: 10px;" title="【管理者】このスコアを削除">🗑️</button>`
                 : '';
 
+            const safePlayerName = this.escapeHtml(entry.playerName || '名無し職人');
+            const safeTimestamp = this.escapeHtml(entry.timestamp || '不明');
+
             div.innerHTML = `
                 <div class="lb-rank">${idx === 0 ? '👑 1' : `#${idx + 1}`}</div>
-                <div class="lb-name" title="登録日時: ${entry.timestamp || '不明'}">${entry.playerName}</div>
+                <div class="lb-name" title="登録日時: ${safeTimestamp}">${safePlayerName}</div>
                 <div class="lb-score">${entry.heat} 🔥</div>
                 <div class="lb-actions">
                     <button class="btn btn-restore-placement" style="padding: 2px 6px; font-size: 10px;" title="この配置を盤面に復元">配置</button>

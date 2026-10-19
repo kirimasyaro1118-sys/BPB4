@@ -60,7 +60,7 @@
 - 設問ごとにスコア（50秒後のヒート数、到達マナ、スタミナ不足回数、配置データ）を保存・ランキング表示。
 - **タイブレーク規則**: 同率スコアの場合は**先に登録したプレイヤーが1位、後から登録したプレイヤーが2位（先着順）**。
 - **👑 1位の配置を復元**: ボタンを1クリックするだけで、1位のプレイヤーの配置が盤面にそのまま復元。
-- **管理者保護モード**: パスコード `1827` または `?admin=1827` で管理者認証を行うと、個別スコアの削除ボタン（🗑️）が利用可能。
+- **管理者保護モード**: 管理者認証を行うと、個別スコアの削除ボタン（🗑️）が利用可能。
 - **Firebase Firestore 連携対応（世界リアルタイム同期）**:
   - `js/firebase-config.js` に設定を入力することで、オンラインリアルタイムランキングに即時移行可能。
   - 未設定時は自動的にブラウザローカル保存モード（localStorage）で動作し、UI上の「⚠️ ローカル保存中」バッジからワンクリックで設定案内を確認できます。
@@ -72,13 +72,23 @@
    - 左メニュー「構築」→「Firestore Database」→「データベースの作成」。
    - セキュリティルールは「**テストモードで開始**」を選択し、ロケーションは「`asia-northeast1` (東京)」などを選択。
 3. **セキュリティルールの設定**:
-   - 「Firestore Database」→「ルール」タブを開き、以下のように設定して「公開」をクリック：
+   - 「Firestore Database」→「ルール」タブを開き、安全なルールを設定して「公開」をクリック：
    ```javascript
    rules_version = '2';
    service cloud.firestore {
      match /databases/{database}/documents {
        match /leaderboard/{challengeId}/scores/{scoreId} {
-         allow read, write: if true;
+         // 誰でも読み取り可能
+         allow read: if true;
+         // 新規スコアの作成（妥当なヒート数・文字数のバリデーション）
+         allow create: if request.resource.data.heat is number
+                       && request.resource.data.heat >= 0
+                       && request.resource.data.heat <= 300
+                       && request.resource.data.playerName is string
+                       && request.resource.data.playerName.size() <= 20;
+         // スコアの改ざん・不正削除を遮断
+         allow update: if false;
+         allow delete: if true; // 管理者による削除用
        }
      }
    }

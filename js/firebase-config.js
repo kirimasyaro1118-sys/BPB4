@@ -10,6 +10,3 @@ window.FIREBASE_CONFIG = {
     messagingSenderId: "644320126869",
     appId: "1:644320126869:web:4dd2365748893ad501f89c"
 };
-
-// 管理者パスコード (スコア個別削除・リセット用)
-window.ADMIN_PASSCODE = '1827';
