@@ -55,6 +55,42 @@ const DEFAULT_CHALLENGES = [
             "fanny_pack": 4,
             "stamina_bag": 2
         }
+    },
+    {
+        "id": "pattern_4",
+        "name": "パターン4",
+        "description": "",
+        "mode": "free",
+        "itemLimits": {
+            "eggscalibur": 1,
+            "chili": 8,
+            "banana": 2,
+            "cupcake": 0,
+            "mana_orb": 2
+        },
+        "bagLimits": {
+            "leather_bag": 0,
+            "fanny_pack": 0,
+            "stamina_bag": 0
+        }
+    },
+    {
+        "id": "pattern_5",
+        "name": "パターン5",
+        "description": "",
+        "mode": "free",
+        "itemLimits": {
+            "eggscalibur": 1,
+            "chili": 2,
+            "banana": 2,
+            "cupcake": 6,
+            "mana_orb": 2
+        },
+        "bagLimits": {
+            "leather_bag": 0,
+            "fanny_pack": 0,
+            "stamina_bag": 0
+        }
     }
 ];
 
