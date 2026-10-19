@@ -98,20 +98,15 @@ class ChallengeManager {
     constructor() {
         this.storageKey = 'bpb_eggscalibur_challenges_v1';
         this.activeChallengeId = 'p1';
-        this.challenges = this.loadChallenges();
-        this.listeners = [];
 
-        // 他タブでの更新をリアルタイム検知
-        window.addEventListener('storage', (e) => {
-            if (e.key === this.storageKey && e.newValue) {
-                try {
-                    this.challenges = JSON.parse(e.newValue);
-                    this.notify();
-                } catch (err) {
-                    console.warn('同期エラー:', err);
-                }
-            }
-        });
+        // 過去にブラウザに保存された古い設問データを完全に消去・クリーンアップ
+        try {
+            localStorage.removeItem(this.storageKey);
+        } catch (e) {}
+
+        // 常に公式の最新設問（DEFAULT_CHALLENGES）のみを使用
+        this.challenges = [...DEFAULT_CHALLENGES];
+        this.listeners = [];
     }
 
     onChange(listener) {
@@ -123,40 +118,12 @@ class ChallengeManager {
     }
 
     loadChallenges() {
-        try {
-            const raw = localStorage.getItem(this.storageKey);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    // 最新の公式設問（DEFAULT_CHALLENGES）にあって保存データにないものを自動合体
-                    const merged = [...parsed];
-                    let hasNew = false;
-                    for (const defCh of DEFAULT_CHALLENGES) {
-                        if (!merged.some(c => c.id === defCh.id)) {
-                            merged.push(defCh);
-                            hasNew = true;
-                        }
-                    }
-                    if (hasNew) {
-                        try {
-                            localStorage.setItem(this.storageKey, JSON.stringify(merged));
-                        } catch (e) {}
-                    }
-                    return merged;
-                }
-            }
-        } catch (e) {
-            console.warn('設問の読み込みエラー:', e);
-        }
+        // 過去の個人データは読み込まず、常に公式設問のみを返す
         return [...DEFAULT_CHALLENGES];
     }
 
     saveChallenges() {
-        try {
-            localStorage.setItem(this.storageKey, JSON.stringify(this.challenges));
-        } catch (e) {
-            console.error('設問の保存エラー:', e);
-        }
+        // 公式設問固定のため保存不要
     }
 
     getActiveChallenge() {
