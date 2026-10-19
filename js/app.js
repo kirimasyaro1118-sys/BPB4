@@ -711,7 +711,7 @@ class App {
             if (def.type === ITEM_TYPES.FOOD && typeof this.grid.getAdjacentDifferentFoods === 'function') {
                 const diffFoods = this.grid.getAdjacentDifferentFoods(item);
                 const bonus = diffFoods.length * 10;
-                itemEl.title = `${def.name} (基本CD: ${def.baseCooldown}s)\n【食べ物共通】隣接する種類の違う食べ物: ${diffFoods.length}個 (+${bonus}%加速)`;
+                itemEl.title = `${def.name} (基本CD: ${def.baseCooldown}s)\n【食べ物共通】隣接(上下左右)する種類の違う食べ物: ${diffFoods.length}個 (+${bonus}%加速)`;
             } else if (def.baseCooldown) {
                 itemEl.title = `${def.name} (基本CD: ${def.baseCooldown}s)`;
             } else {

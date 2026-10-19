@@ -51,7 +51,7 @@ const ITEMS = {
         type: ITEM_TYPES.FOOD,
         rarity: 'rare',
         icon: '🌶️',
-        description: '4.5秒ごとに1ヒートを獲得する。【食べ物共通】隣接する種類の違う食べ物1個につきCD+10%加速。',
+        description: '4.5秒ごとに1ヒートを獲得する。【食べ物共通】隣接（上下左右）する種類の違う食べ物1個につきCD+10%加速。',
         baseCooldown: 4.5,
         heatGain: 1,
         // 2マス (横2x縦1)
@@ -68,7 +68,7 @@ const ITEMS = {
         type: ITEM_TYPES.FOOD,
         rarity: 'common',
         icon: '🍌',
-        description: '5.0秒ごとにスタミナを1回復する。【食べ物共通】隣接する種類の違う食べ物1個につきCD+10%加速。',
+        description: '5.0秒ごとにスタミナを1回復する。【食べ物共通】隣接（上下左右）する種類の違う食べ物1個につきCD+10%加速。',
         baseCooldown: 5.0,
         staminaGain: 1,
         // 曲がった3マス (L字 2x2のうち3マス)
@@ -88,7 +88,7 @@ const ITEMS = {
         type: ITEM_TYPES.FOOD,
         rarity: 'rare',
         icon: '🧁',
-        description: '6.0秒ごとに一番多いバフ2を獲得する（最多バフ同数時はマナ2獲得）。【食べ物共通】隣接する種類の違う食べ物1個につきCD+10%加速。',
+        description: '6.0秒ごとに一番多いバフ2を獲得する（最多バフ同数時はマナ2獲得）。【食べ物共通】隣接（上下左右）する種類の違う食べ物1個につきCD+10%加速。',
         baseCooldown: 6.0,
         buffGainCount: 2,
         // 1マス

@@ -460,7 +460,7 @@ class GridManager {
 
     /**
      * 指定された食べ物アイテムに隣接している「種類の異なる食べ物アイテム」の配列を取得
-     * 隣接判定: 8近傍（縦横斜めのいずれかのマスが接している）
+     * 隣接判定: 4近傍（上下左右のみ。斜めは含まない）
      * 種類の異なる: other.itemId !== item.itemId
      */
     getAdjacentDifferentFoods(item) {
@@ -479,14 +479,15 @@ class GridManager {
             // 種類が異なること（同種の食べ物は加速対象外）
             if (other.itemId === item.itemId) continue;
 
-            // otherのいずれかのマスが、itemのいずれかのマスと8近傍（縦横斜め）で隣接しているか判定
+            // otherのいずれかのマスが、itemのいずれかのマスと4近傍（上下左右のみ）で隣接しているか判定
             let isAdjacent = false;
             for (const [ox, oy] of other.coords) {
                 const otherX = other.col + ox;
                 const otherY = other.row + oy;
 
                 for (const [ix, iy] of itemCells) {
-                    if (Math.abs(otherX - ix) <= 1 && Math.abs(otherY - iy) <= 1) {
+                    // 上下左右に隣接（マンハッタン距離が1）
+                    if (Math.abs(otherX - ix) + Math.abs(otherY - iy) === 1) {
                         isAdjacent = true;
                         break;
                     }
