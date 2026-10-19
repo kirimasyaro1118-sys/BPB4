@@ -128,7 +128,21 @@ class ChallengeManager {
             if (raw) {
                 const parsed = JSON.parse(raw);
                 if (Array.isArray(parsed) && parsed.length > 0) {
-                    return parsed;
+                    // 最新の公式設問（DEFAULT_CHALLENGES）にあって保存データにないものを自動合体
+                    const merged = [...parsed];
+                    let hasNew = false;
+                    for (const defCh of DEFAULT_CHALLENGES) {
+                        if (!merged.some(c => c.id === defCh.id)) {
+                            merged.push(defCh);
+                            hasNew = true;
+                        }
+                    }
+                    if (hasNew) {
+                        try {
+                            localStorage.setItem(this.storageKey, JSON.stringify(merged));
+                        } catch (e) {}
+                    }
+                    return merged;
                 }
             }
         } catch (e) {
