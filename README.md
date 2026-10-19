@@ -72,23 +72,13 @@
    - 左メニュー「構築」→「Firestore Database」→「データベースの作成」。
    - セキュリティルールは「**テストモードで開始**」を選択し、ロケーションは「`asia-northeast1` (東京)」などを選択。
 3. **セキュリティルールの設定**:
-   - 「Firestore Database」→「ルール」タブを開き、安全なルールを設定して「公開」をクリック：
+   - 「Firestore Database」→「ルール」タブを開き、以下のように設定して「公開」をクリック：
    ```javascript
    rules_version = '2';
    service cloud.firestore {
      match /databases/{database}/documents {
        match /leaderboard/{challengeId}/scores/{scoreId} {
-         // 誰でも読み取り可能
-         allow read: if true;
-         // 新規スコアの作成（妥当なヒート数・文字数のバリデーション）
-         allow create: if request.resource.data.heat is number
-                       && request.resource.data.heat >= 0
-                       && request.resource.data.heat <= 300
-                       && request.resource.data.playerName is string
-                       && request.resource.data.playerName.size() <= 20;
-         // スコアの改ざん・不正削除を遮断
-         allow update: if false;
-         allow delete: if true; // 管理者による削除用
+         allow read, write: if true;
        }
      }
    }

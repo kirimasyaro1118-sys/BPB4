@@ -226,8 +226,7 @@ class LeaderboardManager {
                     const scores = [];
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        // データ検証（チート・不正データのフィルタリング）
-                        if (data && typeof data.heat === 'number' && !isNaN(data.heat) && data.heat >= 0 && data.heat <= 300) {
+                        if (data && (data.heat !== undefined || data.id)) {
                             scores.push(data);
                         }
                     });
@@ -256,12 +255,12 @@ class LeaderboardManager {
     }
 
     /**
-     * 新しいスコアを登録（バリデーション＆レートリミット保護付き）
+     * 新しいスコアを登録（上限なし・自由なスコア登録対応）
      */
     addScore(challengeId, playerName, simResult, gridData) {
         if (!challengeId || !simResult) return null;
 
-        // 1. 連投防止レートリミット（3秒以内の連打・スパム防止）
+        // 1. 連投防止レートリミット（3秒以内の連打防止）
         const now = Date.now();
         if (now - this.lastSubmitTime < 3000) {
             alert('スコア登録の間隔が短すぎます。数秒お待ちください。');
@@ -269,12 +268,8 @@ class LeaderboardManager {
         }
         this.lastSubmitTime = now;
 
-        // 2. スコア値のバリデーション（異常値・改ざんの遮断）
-        const heat = Number(simResult.finalHeat);
-        if (isNaN(heat) || heat < 0 || heat > 300) {
-            alert('無効なスコアデータが検出されました。');
-            return null;
-        }
+        // 2. スコア値の取得（上限なし）
+        const heat = typeof simResult.finalHeat === 'number' ? simResult.finalHeat : (Number(simResult.finalHeat) || 0);
 
         // 3. プレイヤー名のサニタイズ（制御文字除去、最大12文字）
         let safeName = String(playerName || '名無し職人').trim().replace(/[\x00-\x1F\x7F]/g, '');
