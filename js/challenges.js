@@ -4,7 +4,7 @@
 const DEFAULT_CHALLENGES = [
     {
         "id": "p1",
-        "name": "パターン1",
+        "name": "パターン1　大食無しパイロ",
         "description": "",
         "mode": "free",
         "itemLimits": {
@@ -22,7 +22,7 @@ const DEFAULT_CHALLENGES = [
     },
     {
         "id": "pattern_2",
-        "name": "パターン2",
+        "name": "パターン2　大食基本構成",
         "description": "",
         "mode": "free",
         "itemLimits": {
@@ -40,7 +40,7 @@ const DEFAULT_CHALLENGES = [
     },
     {
         "id": "pattern_3",
-        "name": "パターン3",
+        "name": "パターン3　バッグ加味",
         "description": "",
         "mode": "bag",
         "itemLimits": {
@@ -58,7 +58,7 @@ const DEFAULT_CHALLENGES = [
     },
     {
         "id": "pattern_4",
-        "name": "パターン4",
+        "name": "パターン4　トウガラシ多",
         "description": "",
         "mode": "free",
         "itemLimits": {
@@ -76,7 +76,7 @@ const DEFAULT_CHALLENGES = [
     },
     {
         "id": "pattern_5",
-        "name": "パターン5",
+        "name": "パターン5　カップケーキ多",
         "description": "",
         "mode": "free",
         "itemLimits": {
@@ -85,6 +85,42 @@ const DEFAULT_CHALLENGES = [
             "banana": 2,
             "cupcake": 6,
             "mana_orb": 2
+        },
+        "bagLimits": {
+            "leather_bag": 0,
+            "fanny_pack": 0,
+            "stamina_bag": 0
+        }
+    },
+    {
+        "id": "pattern_6",
+        "name": "パターン6　マナオーブ3",
+        "description": "",
+        "mode": "free",
+        "itemLimits": {
+            "eggscalibur": 1,
+            "chili": 4,
+            "banana": 2,
+            "cupcake": 4,
+            "mana_orb": 3
+        },
+        "bagLimits": {
+            "leather_bag": 0,
+            "fanny_pack": 0,
+            "stamina_bag": 0
+        }
+    },
+    {
+        "id": "pattern_7",
+        "name": "パターン7　マナオーブ4",
+        "description": "",
+        "mode": "free",
+        "itemLimits": {
+            "eggscalibur": 1,
+            "chili": 4,
+            "banana": 2,
+            "cupcake": 4,
+            "mana_orb": 4
         },
         "bagLimits": {
             "leather_bag": 0,
