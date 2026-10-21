@@ -7,3 +7,6 @@ credentials.json
 token.json
 .DS_Store
 Thumbs.db
+backup_*.json
+backup_all_leaderboard.ps1
+check_rank_changes.ps1
