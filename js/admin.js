@@ -9,7 +9,7 @@
             name: 'パターン1: エッグス基礎検証（全解放盤面）',
             description: 'バッグなしの全63マスで、エッグスカリバー・トウガラシ・バナナ・マナオーブの基本シナジーとヒート速度を検証します。',
             mode: 'free',
-            itemLimits: { eggscalibur: 1, chili: 8, banana: 4, cupcake: 2, mana_orb: 3 },
+            itemLimits: { eggscalibur: 1, chili: 8, banana: 4, cupcake: 2, blueberry: 6, mana_orb: 3 },
             bagLimits: { leather_bag: 0, fanny_pack: 0, stamina_bag: 0 }
         },
         {
@@ -17,7 +17,7 @@
             name: 'パターン2: バッグ構築・スタミナ制限チャレンジ',
             description: 'ウエストポーチとスタミナバッグを駆使し、限られたスペースでエッグスカリバーのCD短縮とスタミナを両立させる構成。',
             mode: 'bag',
-            itemLimits: { eggscalibur: 1, chili: 6, banana: 3, cupcake: 3, mana_orb: 2 },
+            itemLimits: { eggscalibur: 1, chili: 6, banana: 3, cupcake: 3, blueberry: 6, mana_orb: 2 },
             bagLimits: { leather_bag: 4, fanny_pack: 3, stamina_bag: 2 }
         },
         {
@@ -25,7 +25,7 @@
             name: 'パターン3: マナオーブ特化・高速ヒート爆発',
             description: 'マナオーブを最大活用して35マナ到達（全バフ+3）を最速で狙い、ヒートを極限まで加速させるハイレベル構成。',
             mode: 'free',
-            itemLimits: { eggscalibur: 2, chili: 10, banana: 6, cupcake: 4, mana_orb: 5 },
+            itemLimits: { eggscalibur: 2, chili: 10, banana: 6, cupcake: 4, blueberry: 6, mana_orb: 5 },
             bagLimits: { leather_bag: 0, fanny_pack: 0, stamina_bag: 0 }
         }
     ];
@@ -91,11 +91,17 @@
         constructor() {
             this.challenges = new ChallengeManagerClass();
             this.leaderboard = LeaderboardManagerClass ? new LeaderboardManagerClass() : null;
+            this.changelogManager = new (window.ChangelogManager || class {
+                getChangelog() { return window.DEFAULT_CHANGELOG || ''; }
+                saveChangelog(t) { try { localStorage.setItem('bpb_eggscalibur_changelog_v1', t); return true; } catch (e) { return false; } }
+                resetToDefault() { try { localStorage.removeItem('bpb_eggscalibur_changelog_v1'); } catch (e) {} return window.DEFAULT_CHANGELOG || ''; }
+            })();
             this.currentEditingId = null; // nullなら新規作成
 
             this.initDOM();
             this.bindEvents();
             this.renderQuestionList();
+            this.loadChangelogToForm();
 
             // 初期選択
             const initial = this.challenges.getActiveChallenge();
@@ -134,6 +140,7 @@
                 inpLimitChili: document.getElementById('inpLimitChili'),
                 inpLimitBanana: document.getElementById('inpLimitBanana'),
                 inpLimitCupcake: document.getElementById('inpLimitCupcake'),
+                inpLimitBlueberry: document.getElementById('inpLimitBlueberry'),
                 inpLimitManaOrb: document.getElementById('inpLimitManaOrb'),
 
                 inpLimitLeather: document.getElementById('inpLimitLeather'),
@@ -145,7 +152,12 @@
                 btnSave: document.getElementById('btnSave'),
                 btnSaveNew: document.getElementById('btnSaveNew'),
                 btnExportChallengesJs: document.getElementById('btnExportChallengesJs'),
-                btnExportChallengesJsSide: document.getElementById('btnExportChallengesJsSide')
+                btnExportChallengesJsSide: document.getElementById('btnExportChallengesJsSide'),
+
+                inpChangelog: document.getElementById('inpChangelog'),
+                btnSaveChangelog: document.getElementById('btnSaveChangelog'),
+                btnResetChangelog: document.getElementById('btnResetChangelog'),
+                btnExportChangelogJs: document.getElementById('btnExportChangelogJs')
             };
         }
 
@@ -200,6 +212,17 @@
             }
             if (this.dom.btnExportChallengesJsSide) {
                 this.dom.btnExportChallengesJsSide.addEventListener('click', onExportChallenges);
+            }
+
+            // 更新履歴編集イベント
+            if (this.dom.btnSaveChangelog) {
+                this.dom.btnSaveChangelog.addEventListener('click', () => this.saveChangelog());
+            }
+            if (this.dom.btnResetChangelog) {
+                this.dom.btnResetChangelog.addEventListener('click', () => this.resetChangelog());
+            }
+            if (this.dom.btnExportChangelogJs) {
+                this.dom.btnExportChangelogJs.addEventListener('click', () => this.exportChangelogJs());
             }
 
             // JSON エクスポート / インポート
@@ -289,6 +312,7 @@
             if (this.dom.inpLimitChili) this.dom.inpLimitChili.value = q.itemLimits?.chili ?? 8;
             if (this.dom.inpLimitBanana) this.dom.inpLimitBanana.value = q.itemLimits?.banana ?? 4;
             if (this.dom.inpLimitCupcake) this.dom.inpLimitCupcake.value = q.itemLimits?.cupcake ?? 3;
+            if (this.dom.inpLimitBlueberry) this.dom.inpLimitBlueberry.value = q.itemLimits?.blueberry ?? 6;
             if (this.dom.inpLimitManaOrb) this.dom.inpLimitManaOrb.value = q.itemLimits?.mana_orb ?? 3;
 
             // バッグ上限
@@ -335,6 +359,7 @@
             if (this.dom.inpLimitChili) this.dom.inpLimitChili.value = 8;
             if (this.dom.inpLimitBanana) this.dom.inpLimitBanana.value = 4;
             if (this.dom.inpLimitCupcake) this.dom.inpLimitCupcake.value = 3;
+            if (this.dom.inpLimitBlueberry) this.dom.inpLimitBlueberry.value = 0;
             if (this.dom.inpLimitManaOrb) this.dom.inpLimitManaOrb.value = 3;
 
             if (this.dom.inpLimitLeather) this.dom.inpLimitLeather.value = 4;
@@ -359,6 +384,7 @@
                     chili: parseInt(this.dom.inpLimitChili?.value) || 0,
                     banana: parseInt(this.dom.inpLimitBanana?.value) || 0,
                     cupcake: parseInt(this.dom.inpLimitCupcake?.value) || 0,
+                    blueberry: parseInt(this.dom.inpLimitBlueberry?.value) || 0,
                     mana_orb: parseInt(this.dom.inpLimitManaOrb?.value) || 0
                 },
                 bagLimits: mode === 'bag' ? {
@@ -721,6 +747,111 @@ if (typeof window !== 'undefined') {
                 if (first) this.selectQuestion(first.id);
                 alert('初期プリセットに復元しました。');
             }
+        }
+
+        // === 更新履歴管理メソッド ===
+        loadChangelogToForm() {
+            if (this.dom.inpChangelog && this.changelogManager) {
+                this.dom.inpChangelog.value = this.changelogManager.getChangelog();
+            }
+        }
+
+        saveChangelog() {
+            if (!this.dom.inpChangelog || !this.changelogManager) return;
+            const text = this.dom.inpChangelog.value.trim();
+            if (this.changelogManager.saveChangelog(text)) {
+                this.showToast('📝 更新履歴を保存しました！シミュレーター（index.html）のヘッダーに即時反映されます。', 'success');
+            } else {
+                this.showToast('更新履歴の保存に失敗しました。', 'error');
+            }
+        }
+
+        resetChangelog() {
+            if (confirm('更新履歴の文言を初期状態に戻しますか？')) {
+                const defaultText = this.changelogManager.resetToDefault();
+                if (this.dom.inpChangelog) this.dom.inpChangelog.value = defaultText;
+                this.showToast('↺ 更新履歴を初期文言に復元しました。', 'info');
+            }
+        }
+
+        async exportChangelogJs() {
+            if (!this.dom.inpChangelog) return;
+            const text = this.dom.inpChangelog.value.trim();
+            const jsContent = `// Backpack Battles - エッグスシミュ 更新履歴定義 (changelog.js)
+// 管理画面（admin.html）から編集・エクスポートされた最新の更新履歴データです。
+
+const DEFAULT_CHANGELOG = ${JSON.stringify(text)};
+
+class ChangelogManager {
+    constructor() {
+        this.storageKey = 'bpb_eggscalibur_changelog_v1';
+    }
+
+    getChangelog() {
+        try {
+            const saved = localStorage.getItem(this.storageKey);
+            if (saved !== null && saved.trim() !== '') {
+                return saved;
+            }
+        } catch (e) {
+            console.warn('Failed to load changelog from localStorage:', e);
+        }
+        return DEFAULT_CHANGELOG;
+    }
+
+    saveChangelog(text) {
+        try {
+            localStorage.setItem(this.storageKey, text);
+            return true;
+        } catch (e) {
+            console.error('Failed to save changelog to localStorage:', e);
+            return false;
+        }
+    }
+
+    resetToDefault() {
+        try {
+            localStorage.removeItem(this.storageKey);
+        } catch (e) {}
+        return DEFAULT_CHANGELOG;
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.DEFAULT_CHANGELOG = DEFAULT_CHANGELOG;
+    window.ChangelogManager = ChangelogManager;
+}
+`;
+
+            // 1. File System Access API
+            if ('showDirectoryPicker' in window) {
+                try {
+                    alert('プロジェクトフォルダ（eggscalibur-simulator）を選択してください。\\n\\n「js/changelog.js」に直接書き出され、自動的に上書き保存されます。');
+                    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                    const jsDirHandle = await dirHandle.getDirectoryHandle('js', { create: true });
+                    const changelogJsFileHandle = await jsDirHandle.getFileHandle('changelog.js', { create: true });
+                    const writable = await changelogJsFileHandle.createWritable();
+                    await writable.write(jsContent);
+                    await writable.close();
+
+                    this.showToast('✨ プロジェクトの「js/changelog.js」への直接保存が完了しました！', 'success');
+                    return;
+                } catch (err) {
+                    if (err.name === 'AbortError') return;
+                    console.warn('DirectoryPicker failed or declined, falling back to download:', err);
+                }
+            }
+
+            // 2. フォールバック: ダウンロード
+            const blob = new Blob([jsContent], { type: 'text/javascript;charset=utf-8' });
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.href = URL.createObjectURL(blob);
+            downloadAnchor.download = 'changelog.js';
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            this.showToast('「changelog.js」をダウンロードしました。プロジェクトの「js/changelog.js」に上書きしてください。', 'info');
         }
     }
 

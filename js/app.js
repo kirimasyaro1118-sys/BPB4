@@ -198,11 +198,69 @@ class App {
             modalCloudSyncBackdrop: document.getElementById('modalCloudSyncBackdrop'),
             modalCloudSyncBody: document.getElementById('modalCloudSyncBody'),
             btnModalCloudClose: document.getElementById('btnModalCloudClose'),
-            btnModalCloudDismiss: document.getElementById('btnModalCloudDismiss')
+            btnModalCloudDismiss: document.getElementById('btnModalCloudDismiss'),
+            headerChangelogContent: document.getElementById('headerChangelogContent')
         };
 
         this.renderGridCells();
         this.initChart();
+        this.renderChangelog();
+    }
+
+    /**
+     * ヘッダーの更新履歴ツールチップ描画
+     */
+    renderChangelog() {
+        const container = this.dom.headerChangelogContent;
+        if (!container) return;
+
+        const changelogManager = new (window.ChangelogManager || class { getChangelog() { return window.DEFAULT_CHANGELOG || ''; } })();
+        const rawText = changelogManager.getChangelog();
+        container.innerHTML = '';
+
+        if (!rawText || !rawText.trim()) {
+            container.innerHTML = '<div style="color: var(--text-muted); font-size: 12px; padding: 10px;">更新履歴はありません</div>';
+            return;
+        }
+
+        const lines = rawText.split('\n');
+        let currentGroup = null;
+        let currentList = null;
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+
+            const matchDate = trimmed.match(/^【(.*?)】$/) || trimmed.match(/^\[(.*?)\]$/) || trimmed.match(/^#+\s*(.*?)$/);
+            if (matchDate) {
+                currentGroup = document.createElement('div');
+                currentGroup.className = 'changelog-group';
+
+                const badge = document.createElement('div');
+                badge.className = 'changelog-date-badge';
+                badge.textContent = `📅 ${matchDate[1]}`;
+                currentGroup.appendChild(badge);
+
+                currentList = document.createElement('ul');
+                currentList.className = 'changelog-list';
+                currentGroup.appendChild(currentList);
+
+                container.appendChild(currentGroup);
+            } else {
+                if (!currentGroup) {
+                    currentGroup = document.createElement('div');
+                    currentGroup.className = 'changelog-group';
+                    currentList = document.createElement('ul');
+                    currentList.className = 'changelog-list';
+                    currentGroup.appendChild(currentList);
+                    container.appendChild(currentGroup);
+                }
+
+                const li = document.createElement('li');
+                li.textContent = trimmed.replace(/^[・\-\*]\s*/, '');
+                currentList.appendChild(li);
+            }
+        }
     }
 
     renderGridCells() {
@@ -508,7 +566,7 @@ class App {
 
     renderPalettes(ch) {
         // アイテムパレット
-        const itemIds = ['eggscalibur', 'chili', 'banana', 'cupcake', 'mana_orb'];
+        const itemIds = ['eggscalibur', 'chili', 'banana', 'cupcake', 'blueberry', 'mana_orb'];
         this.dom.itemPaletteList.innerHTML = '';
 
         for (const id of itemIds) {
@@ -566,7 +624,7 @@ class App {
         const ch = this.challenges.getActiveChallenge();
         
         // アイテムカウント
-        for (const id of ['eggscalibur', 'chili', 'banana', 'cupcake', 'mana_orb']) {
+        for (const id of ['eggscalibur', 'chili', 'banana', 'cupcake', 'blueberry', 'mana_orb']) {
             const count = this.grid.placedItems.filter(i => i.itemId === id).length;
             const limit = ch.itemLimits[id] ?? 99;
             const el = document.getElementById(`count_${id}`);
@@ -1727,9 +1785,19 @@ class App {
         const ch = this.challenges.getActiveChallenge();
         const gridData = this.grid.serialize();
 
-        this.leaderboard.addScore(ch.id, playerName, this.lastSimResult, gridData);
-        this.dom.btnSubmitScore.disabled = true;
-        alert(`スコア [ヒート: ${this.lastSimResult.finalHeat}] をランキングに登録しました！`);
+        const result = this.leaderboard.addScore(ch.id, playerName, this.lastSimResult, gridData);
+        if (!result) return;
+
+        if (result.success) {
+            this.dom.btnSubmitScore.disabled = true;
+            if (result.isUpdate) {
+                alert(`🎉 自己ベスト更新！\nプレイヤー「${playerName}」の過去スコア (${result.oldHeat} heat) を削除し、新記録 [ヒート: ${result.entry.heat}] で更新しました！`);
+            } else {
+                alert(`スコア [ヒート: ${result.entry.heat}] をランキングに登録しました！`);
+            }
+        } else if (result.reason === 'lower_or_equal') {
+            alert(`⚠️ 既に同等以上の自己ベスト [ヒート: ${result.currentBest}] が登録されています。\n（今回のスコア: ${result.newHeat} heat のため更新されませんでした）`);
+        }
     }
 
     escapeHtml(str) {
@@ -1971,6 +2039,7 @@ service cloud.firestore {
         this.dom.mLimitChili.value = ch.itemLimits.chili ?? 8;
         this.dom.mLimitBanana.value = ch.itemLimits.banana ?? 4;
         this.dom.mLimitCupcake.value = ch.itemLimits.cupcake ?? 3;
+        if (this.dom.mLimitBlueberry) this.dom.mLimitBlueberry.value = ch.itemLimits.blueberry ?? 4;
         this.dom.mLimitManaOrb.value = ch.itemLimits.mana_orb ?? 3;
 
         this.dom.mLimitLeather.value = ch.bagLimits?.leather_bag ?? 4;
@@ -2000,6 +2069,7 @@ service cloud.firestore {
                 chili: parseInt(this.dom.mLimitChili.value) || 0,
                 banana: parseInt(this.dom.mLimitBanana.value) || 0,
                 cupcake: parseInt(this.dom.mLimitCupcake.value) || 0,
+                blueberry: parseInt(this.dom.mLimitBlueberry?.value) || 0,
                 mana_orb: parseInt(this.dom.mLimitManaOrb.value) || 0
             },
             bagLimits: mode === 'bag' ? {

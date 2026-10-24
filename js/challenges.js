@@ -12,6 +12,7 @@ const DEFAULT_CHALLENGES = [
             "chili": 6,
             "banana": 2,
             "cupcake": 0,
+            "blueberry": 0,
             "mana_orb": 2
         },
         "bagLimits": {
@@ -30,6 +31,7 @@ const DEFAULT_CHALLENGES = [
             "chili": 4,
             "banana": 2,
             "cupcake": 2,
+            "blueberry": 0,
             "mana_orb": 2
         },
         "bagLimits": {
@@ -48,6 +50,7 @@ const DEFAULT_CHALLENGES = [
             "chili": 4,
             "banana": 2,
             "cupcake": 2,
+            "blueberry": 0,
             "mana_orb": 2
         },
         "bagLimits": {
@@ -66,6 +69,7 @@ const DEFAULT_CHALLENGES = [
             "chili": 8,
             "banana": 2,
             "cupcake": 0,
+            "blueberry": 0,
             "mana_orb": 2
         },
         "bagLimits": {
@@ -84,6 +88,7 @@ const DEFAULT_CHALLENGES = [
             "chili": 2,
             "banana": 2,
             "cupcake": 6,
+            "blueberry": 0,
             "mana_orb": 2
         },
         "bagLimits": {
@@ -102,6 +107,7 @@ const DEFAULT_CHALLENGES = [
             "chili": 4,
             "banana": 2,
             "cupcake": 4,
+            "blueberry": 0,
             "mana_orb": 3
         },
         "bagLimits": {
@@ -120,6 +126,7 @@ const DEFAULT_CHALLENGES = [
             "chili": 4,
             "banana": 2,
             "cupcake": 4,
+            "blueberry": 0,
             "mana_orb": 4
         },
         "bagLimits": {
@@ -138,7 +145,27 @@ const DEFAULT_CHALLENGES = [
             "chili": 10,
             "banana": 6,
             "cupcake": 0,
+            "blueberry": 0,
             "mana_orb": 4
+        },
+        "bagLimits": {
+            "leather_bag": 0,
+            "fanny_pack": 0,
+            "stamina_bag": 0
+        }
+    },
+    {
+        "id": "pattern_9",
+        "name": "パターン1´　ブルーベリー追加",
+        "description": "",
+        "mode": "free",
+        "itemLimits": {
+            "eggscalibur": 1,
+            "chili": 4,
+            "banana": 2,
+            "cupcake": 0,
+            "blueberry": 4,
+            "mana_orb": 2
         },
         "bagLimits": {
             "leather_bag": 0,

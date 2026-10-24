@@ -99,6 +99,22 @@ const ITEMS = {
         color: '#ec4899'
     },
 
+    blueberry: {
+        id: 'blueberry',
+        name: 'ブルーベリー',
+        type: ITEM_TYPES.FOOD,
+        rarity: 'common',
+        icon: '🫐',
+        description: '3.5秒ごとにマナが9以下の場合は1マナ獲得し、マナが10以上の場合は1ラック獲得する。【食べ物共通】隣接（上下左右）する種類の違う食べ物1個につきCD+10%加速。',
+        baseCooldown: 3.5,
+        // 1マス (横1x縦1)
+        shape: [
+            [0, 0]
+        ],
+        starSlots: [],
+        color: '#3b82f6'
+    },
+
     // === アクセサリー ===
     mana_orb: {
         id: 'mana_orb',

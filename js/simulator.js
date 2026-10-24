@@ -250,6 +250,16 @@ class BattleSimulator {
                 this.log(logs, currentTime, `${prefix}カップケーキ発動`, `最多バフ[${topBuff}]に+2獲得 (合計: ${state.buffs[topBuff]})`);
                 if (onEvent) onEvent({ type: 'proc', instanceId: foodItem.instanceId, name: foodItem.def.name, buff: topBuff });
             }
+        } else if (foodItem.itemId === 'blueberry') {
+            if (state.mana <= 9) {
+                state.mana += 1;
+                this.log(logs, currentTime, `${prefix}ブルーベリー発動`, `マナが9以下のためマナ+1獲得 (合計マナ: ${state.mana})`);
+                if (onEvent) onEvent({ type: 'proc', instanceId: foodItem.instanceId, name: foodItem.def.name, buff: 'mana' });
+            } else {
+                state.buffs.luck += 1;
+                this.log(logs, currentTime, `${prefix}ブルーベリー発動`, `マナが10以上(${state.mana})のためラック+1獲得 (合計ラック: ${state.buffs.luck})`);
+                if (onEvent) onEvent({ type: 'proc', instanceId: foodItem.instanceId, name: foodItem.def.name, buff: 'luck' });
+            }
         }
 
         // 食べ物の発動によってマナオーブの星判定をチェック

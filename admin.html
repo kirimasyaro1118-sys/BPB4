@@ -308,6 +308,10 @@
                             <input type="number" id="inpLimitCupcake" class="item-limit-input" min="0" max="20" value="3">
                         </div>
                         <div class="item-limit-box">
+                            <div class="item-limit-label"><span>🫐</span> ブルーベリー</div>
+                            <input type="number" id="inpLimitBlueberry" class="item-limit-input" min="0" max="20" value="6">
+                        </div>
+                        <div class="item-limit-box">
                             <div class="item-limit-label"><span>🔮</span> マナオーブ</div>
                             <input type="number" id="inpLimitManaOrb" class="item-limit-input" min="0" max="20" value="3">
                         </div>
@@ -348,6 +352,34 @@
                     </div>
                 </div>
             </form>
+
+            <!-- 更新履歴編集セクション -->
+            <div class="panel" style="margin-top: 24px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                <div class="panel-title" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 15px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+                        📝 ヘッダー更新履歴の編集
+                    </span>
+                    <span class="badge" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8;">ヘッダー「更新履歴」連動</span>
+                </div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.6;">
+                    メインシミュレーター画面（index.html）のヘッダーにある「📝 更新履歴」ツールチップに表示される文言を編集します。<br>
+                    <code>【YYYY/MM/DD】</code> と記述すると日付見出しとして装飾され、<code>・</code> や <code>-</code> で箇条書きリストになります。
+                </div>
+                <div class="form-group">
+                    <textarea id="inpChangelog" class="form-control" rows="8" style="font-family: monospace; font-size: 13px; line-height: 1.6; background: var(--bg-panel-sub); border: 1px solid var(--border-light); border-radius: 8px; color: var(--text-primary); width: 100%; box-sizing: border-box; padding: 12px;"></textarea>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; flex-wrap: wrap; gap: 10px;">
+                    <button type="button" class="btn" id="btnResetChangelog" style="font-size: 12px;">↺ 初期文言に戻す</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn btn-success" id="btnExportChangelogJs" style="background: linear-gradient(135deg, #0284c7, #0369a1); border-color: #38bdf8; font-weight: 700; font-size: 12px;" title="プロジェクトのjs/changelog.jsに直接保存またはダウンロード">
+                            📥 ネット公開用 changelog.js を保存
+                        </button>
+                        <button type="button" class="btn btn-primary" id="btnSaveChangelog" style="background: #0284c7; border-color: #38bdf8; font-weight: 700; font-size: 12px;">
+                            💾 更新履歴を保存
+                        </button>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -355,9 +387,10 @@
     <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
 
     <!-- クラシックスクリプト読み込み (ローカルfile://でも確実に動作) -->
-    <script src="js/challenges.js?v=52"></script>
-    <script src="js/firebase-config.js?v=52"></script>
-    <script src="js/leaderboard.js?v=52"></script>
-    <script src="js/admin.js?v=52"></script>
+    <script src="js/changelog.js?v=55"></script>
+    <script src="js/challenges.js?v=55"></script>
+    <script src="js/firebase-config.js?v=55"></script>
+    <script src="js/leaderboard.js?v=55"></script>
+    <script src="js/admin.js?v=55"></script>
 </body>
 </html>

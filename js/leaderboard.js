@@ -293,6 +293,48 @@ class LeaderboardManager {
             this.records[challengeId] = [];
         }
 
+        const currentRecords = this.records[challengeId];
+
+        // 5. 同名プレイヤーの既存スコアを検索
+        const sameNameEntries = currentRecords.filter(r => r.playerName === safeName);
+        let isUpdate = false;
+        let oldHeat = null;
+
+        if (sameNameEntries.length > 0) {
+            // 最も高い既存スコアを判定
+            const bestExisting = sameNameEntries.reduce((max, r) => (r.heat > max.heat ? r : max), sameNameEntries[0]);
+
+            // 新しいスコアが既存スコア以下（同等またはそれ以下）の場合は自己ベストを維持して登録スキップ
+            if (heat <= bestExisting.heat) {
+                return {
+                    success: false,
+                    reason: 'lower_or_equal',
+                    currentBest: bestExisting.heat,
+                    newHeat: heat
+                };
+            }
+
+            // 新しいスコアの方が高い場合: より低い既存スコアを削除対象に指定
+            isUpdate = true;
+            oldHeat = bestExisting.heat;
+
+            const idsToDelete = sameNameEntries.filter(r => r.heat < heat).map(r => r.id);
+
+            // ローカルから古いスコアを削除
+            this.records[challengeId] = currentRecords.filter(r => !idsToDelete.includes(r.id));
+
+            // Firestore からも古いスコアを削除（設定されている場合）
+            if (this.firebaseDb) {
+                idsToDelete.forEach(id => {
+                    this.firebaseDb.collection('leaderboard').doc(challengeId).collection('scores').doc(id).delete()
+                        .then(() => {
+                            console.log(`[Firestore] 低いスコアを上書き削除しました: ${id} (${safeName})`);
+                        })
+                        .catch(err => console.warn(`[Firestore] 古いスコア削除失敗:`, err));
+                });
+            }
+        }
+
         const entry = {
             id: 'score_' + now + '_' + Math.random().toString(36).substr(2, 6),
             playerName: safeName,
@@ -305,7 +347,7 @@ class LeaderboardManager {
             timestamp: new Date().toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
         };
 
-        // ローカルに仮追加（即時UI反映用）
+        // ローカルに新スコアを追加
         this.records[challengeId].push(entry);
         this.sortRecords(challengeId);
         if (this.records[challengeId].length > 20) {
@@ -331,7 +373,12 @@ class LeaderboardManager {
         this.subscribeChallenge(challengeId);
 
         this.notify();
-        return entry;
+        return {
+            success: true,
+            isUpdate,
+            oldHeat,
+            entry
+        };
     }
 
     /**
