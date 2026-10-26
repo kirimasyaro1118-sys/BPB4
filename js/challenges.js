@@ -191,6 +191,25 @@ const DEFAULT_CHALLENGES = [
             "fanny_pack": 0,
             "stamina_bag": 0
         }
+    },
+    {
+        "id": "pattern_11",
+        "name": "パターン3'",
+        "description": "",
+        "mode": "bag",
+        "itemLimits": {
+            "eggscalibur": 1,
+            "chili": 2,
+            "banana": 2,
+            "cupcake": 2,
+            "blueberry": 4,
+            "mana_orb": 2
+        },
+        "bagLimits": {
+            "leather_bag": 10,
+            "fanny_pack": 4,
+            "stamina_bag": 2
+        }
     }
 ];
 
