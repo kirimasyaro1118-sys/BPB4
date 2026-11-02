@@ -8,12 +8,14 @@
 class LeaderboardManager {
     constructor() {
         this.storageKey = 'bpb_eggscalibur_leaderboard_v1';
+        this.requestStorageKey = 'bpb_item_requests_v1';
         this.authStorageKey = 'bpb_admin_auth_hash_v2';
 
-        // 管理者パスコードの SHA-256 ハッシュ値（平文パスコードはコード上に保持しない）
+        // 管理者パスワード（zxcv）の SHA-256 ハッシュ値
         this.adminHash = '7020e57625b6a6695ffd51ed494fbfc56c699eaceca4e77bf7ea590c7ebf3879';
 
         this.records = this.loadRecords();
+        this.itemRequests = this.loadItemRequests();
         this.listeners = [];
         this.firebaseDb = null;
 
@@ -372,12 +374,15 @@ class LeaderboardManager {
         // 未購読であれば購読開始
         this.subscribeChallenge(challengeId);
 
+        const isNewTop = this.records[challengeId]?.[0]?.id === entry.id;
+
         this.notify();
         return {
             success: true,
             isUpdate,
             oldHeat,
-            entry
+            entry,
+            isNewTop
         };
     }
 
@@ -512,6 +517,8 @@ class LeaderboardManager {
 
                 // 既知のすべての設問のリアルタイム購読を開始
                 this.subscribeAllKnownChallenges();
+                // 1位達成者からのアイテムリクエスト購読を開始
+                this.subscribeItemRequests();
 
                 this.notify();
             } catch (e) {
@@ -544,6 +551,152 @@ class LeaderboardManager {
             document.head.appendChild(scriptApp);
         } else {
             onSdkReady();
+        }
+    }
+
+    // ========================================================
+    // 👑 1位達成者アイテム構成リクエスト機能 (管理者確認専用)
+    // ========================================================
+
+    loadItemRequests() {
+        try {
+            const raw = localStorage.getItem(this.requestStorageKey);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) return parsed;
+            }
+        } catch (e) {
+            console.warn('アイテムリクエストの読み込みエラー:', e);
+        }
+        return [];
+    }
+
+    saveItemRequests() {
+        try {
+            localStorage.setItem(this.requestStorageKey, JSON.stringify(this.itemRequests));
+        } catch (e) {
+            console.error('アイテムリクエストの保存エラー:', e);
+        }
+    }
+
+    /**
+     * 指定されたスコアが該当設問の1位を更新するかどうかを判定
+     */
+    isNewTopScore(challengeId, heat, staminaMisses = 0) {
+        const top = this.getTopEntry(challengeId);
+        if (!top) return true; // 1位が存在しない場合は必ず1位
+        const numHeat = Number(heat) || 0;
+        if (numHeat > top.heat) return true;
+        if (numHeat === top.heat && staminaMisses < (top.staminaMisses || 0)) return true;
+        return false;
+    }
+
+    /**
+     * 1位達成者によるアイテム構成リクエストの登録
+     */
+    addItemRequest(challengeId, challengeName, playerName, heat, requestText, scoreId = null) {
+        const trimmed = String(requestText || '').trim().replace(/[\x00-\x1F\x7F]/g, '');
+        if (!trimmed) return null;
+
+        const now = Date.now();
+        const req = {
+            id: 'req_' + now + '_' + Math.random().toString(36).substr(2, 6),
+            scoreId: scoreId || '',
+            challengeId: challengeId || '',
+            challengeName: challengeName || challengeId || '設問',
+            playerName: String(playerName || '名無し職人').trim().substring(0, 12),
+            heat: Number(heat) || 0,
+            requestText: trimmed.substring(0, 300),
+            createdAt: now,
+            timestamp: new Date().toLocaleString('ja-JP', {
+                year: 'numeric', month: 'numeric', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            })
+        };
+
+        this.itemRequests.unshift(req);
+        this.saveItemRequests();
+
+        // Firebase Firestore へ送信（設定されている場合）
+        if (this.firebaseDb) {
+            this.firebaseDb.collection('item_requests').doc(req.id).set(req)
+                .then(() => {
+                    console.log(`[Firestore] アイテムリクエストを送信しました: ${req.playerName} (${req.id})`);
+                })
+                .catch(err => {
+                    console.warn('[Firestore] アイテムリクエスト送信失敗:', err);
+                });
+        }
+
+        this.notify();
+        return req;
+    }
+
+    /**
+     * リクエスト一覧の取得（管理者モード時のみ確認可能）
+     */
+    getItemRequests() {
+        if (!this.isAdmin()) return [];
+        return this.itemRequests;
+    }
+
+    /**
+     * リクエストの件数取得（管理者モード時のみ）
+     */
+    getItemRequestCount() {
+        if (!this.isAdmin()) return 0;
+        return this.itemRequests.length;
+    }
+
+    /**
+     * リクエストの削除（管理者のみ実行可能）
+     */
+    deleteItemRequest(requestId) {
+        if (!this.isAdmin() || !requestId) return false;
+
+        this.itemRequests = this.itemRequests.filter(r => r.id !== requestId);
+        this.saveItemRequests();
+
+        if (this.firebaseDb) {
+            this.firebaseDb.collection('item_requests').doc(requestId).delete()
+                .then(() => {
+                    console.log(`[Firestore] アイテムリクエストを削除しました: ${requestId}`);
+                })
+                .catch(err => console.warn('[Firestore] アイテムリクエスト削除失敗:', err));
+        }
+
+        this.notify();
+        return true;
+    }
+
+    /**
+     * Firestore からのアイテムリクエスト購読
+     */
+    subscribeItemRequests() {
+        if (!this.firebaseDb) return;
+        try {
+            this.firebaseDb.collection('item_requests').onSnapshot(snapshot => {
+                const requests = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data && data.requestText) {
+                        requests.push(data);
+                    }
+                });
+
+                // 新着順（createdAt 降順）に整列
+                requests.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+                if (requests.length > 0 || this.itemRequests.length === 0) {
+                    this.itemRequests = requests;
+                    this.saveItemRequests();
+                    this.notify();
+                }
+            }, err => {
+                console.warn('[Firestore] アイテムリクエスト購読エラー:', err);
+            });
+        } catch (e) {
+            console.warn('[Firestore] アイテムリクエスト購読例外:', e);
         }
     }
 }

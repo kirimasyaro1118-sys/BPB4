@@ -3,255 +3,433 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>エッグスシミュ - メンテナンス中 / 一時非公開</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #0f1117;
-            --card-bg: rgba(26, 31, 46, 0.85);
-            --border-color: rgba(255, 255, 255, 0.12);
-            --accent-gold: #f59e0b;
-            --accent-glow: rgba(245, 158, 11, 0.25);
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Outfit', 'Zen Kaku Gothic New', -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: var(--bg-color);
-            background-image: 
-                radial-gradient(circle at 20% 20%, rgba(245, 158, 11, 0.08) 0%, transparent 40%),
-                radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.08) 0%, transparent 40%);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            overflow-x: hidden;
-        }
-
-        .maintenance-container {
-            max-width: 620px;
-            width: 100%;
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 48px 36px;
-            text-align: center;
-            box-shadow: 
-                0 20px 50px rgba(0, 0, 0, 0.6),
-                0 0 40px var(--accent-glow);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            position: relative;
-            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px) scale(0.98);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .icon-wrapper {
-            position: relative;
-            width: 96px;
-            height: 96px;
-            margin: 0 auto 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .pulse-ring {
-            position: absolute;
-            inset: -8px;
-            border-radius: 50%;
-            border: 2px solid var(--accent-gold);
-            opacity: 0.4;
-            animation: pulseRing 2.4s ease-out infinite;
-        }
-
-        @keyframes pulseRing {
-            0% {
-                transform: scale(0.9);
-                opacity: 0.8;
-            }
-            70% {
-                transform: scale(1.35);
-                opacity: 0;
-            }
-            100% {
-                transform: scale(1.35);
-                opacity: 0;
-            }
-        }
-
-        .icon-circle {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #2d1a0e, #1a1625);
-            border: 1px solid rgba(245, 158, 11, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 38px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-            animation: floatIcon 3s ease-in-out infinite;
-        }
-
-        @keyframes floatIcon {
-            0%, 100% {
-                transform: translateY(0);
-            }
-            50% {
-                transform: translateY(-6px);
-            }
-        }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(245, 158, 11, 0.15);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            color: #fbbf24;
-            padding: 6px 14px;
-            border-radius: 9999px;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            margin-bottom: 20px;
-        }
-
-        .badge-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #fbbf24;
-            animation: blink 1.4s ease-in-out infinite;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        h1 {
-            font-size: 28px;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            margin-bottom: 14px;
-            line-height: 1.3;
-            background: linear-gradient(135deg, #ffffff 40%, #cbd5e1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        p.lead {
-            font-size: 16px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 28px;
-        }
-
-        .status-box {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: 20px;
-            text-align: left;
-            margin-bottom: 32px;
-        }
-
-        .status-box-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-        }
-
-        .status-box-desc {
-            font-size: 13px;
-            color: var(--text-muted);
-            line-height: 1.6;
-        }
-
-        .status-box-desc span {
-            color: #e2e8f0;
-            font-weight: 600;
-        }
-
-        .footer-note {
-            font-size: 13px;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
-
-        .footer-brand {
-            margin-top: 24px;
-            font-size: 12px;
-            color: rgba(148, 163, 184, 0.6);
-            letter-spacing: 0.05em;
-        }
-    </style>
+    <title>エッグスシミュ - Backpack Battles 配置検証シミュレーター</title>
+    <link rel="stylesheet" href="css/style.css?v=67">
 </head>
 <body>
-    <div class="maintenance-container">
-        <div class="icon-wrapper">
-            <div class="pulse-ring"></div>
-            <div class="icon-circle">🛠️</div>
-        </div>
-
-        <div class="badge">
-            <span class="badge-dot"></span>
-            Maintenance Mode
-        </div>
-
-        <h1>ただいまメンテナンス中です</h1>
-        <p class="lead">
-            仕様調整およびシステムアップデート作業を実施するため、<br>
-            エッグスシミュを一時的に非公開としております。
-        </p>
-
-        <div class="status-box">
-            <div class="status-box-header">
-                <span>🍳</span>
-                <span>現在の状況</span>
+    <header>
+        <div class="logo-area">
+            <div class="logo-icon">🍳</div>
+            <div class="logo-text">
+                <div class="logo-title-row">
+                    <h1>エッグスシミュ (Eggscalibur Simulator)</h1>
+                    <div class="header-notice-pill" tabindex="0" role="note" aria-label="実際のゲームと違う部分">
+                        <span class="notice-pill-icon">⚠️</span>
+                        <span class="notice-pill-text">実際のゲームと違う部分</span>
+                        <div class="notice-tooltip">
+                            <div class="notice-tooltip-header">
+                                <span class="notice-tooltip-icon">ℹ️</span>
+                                <span>ランダム性をなくす為に実際のゲームと違う点があります</span>
+                            </div>
+                            <ul class="notice-tooltip-list">
+                                <li>カップケーキを発動した時一番多いバフが同数の場合マナを獲得する</li>
+                                <li>マナオーブは★のアイテムの発動時、2回に1回マナを獲得し、マナを獲得しない方からスタートする</li>
+                                <li>マナ爆発はマナ以外の全てのバフそれぞれ3つを獲得する</li>
+                                <li>同時発動のアイテムは配置順によらず「上優先・左優先」で発動する</li>
+                                <li>エッグスの★による食べ物発動は角度によらず「上優先・左優先」で発動する</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="header-notice-pill header-changelog-pill" tabindex="0" role="note" aria-label="更新履歴">
+                        <span class="notice-pill-icon">📝</span>
+                        <span class="notice-pill-text">更新履歴</span>
+                        <div class="notice-tooltip changelog-tooltip">
+                            <div class="notice-tooltip-header">
+                                <span class="notice-tooltip-icon">📋</span>
+                                <span class="changelog-tooltip-header">アップデート・更新履歴</span>
+                            </div>
+                            <div class="changelog-tooltip-body" id="headerChangelogContent">
+                                <!-- JSで動的レンダリング -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p>『Backpack Battles』ヒート特化 最適配置検証＆スコアアタック</p>
             </div>
-            <div class="status-box-desc">
-                現在、<span>アイテム発動順序の改善</span>や<span>動作仕様の最適化・検証作業</span>を行っております。<br>
-                作業完了および再開の準備が整い次第、公開を再開いたします。
-            </div>
         </div>
 
-        <p class="footer-note">
-            ご利用の皆様にはご不便をおかけいたしますが、再開までしばらくお待ちくださいますようお願い申し上げます。
-        </p>
+        <div class="header-right-group">
+            <button class="mobile-help-badge" id="btnMobileHelp" title="スマホ利用時の案内・PC推奨について">
+                <span class="mobile-badge-icon">📱</span>
+                <span class="mobile-badge-text">PC推奨</span>
+            </button>
+            <!-- 🌟 来訪者カウンターバッジ -->
+            <div class="global-counter-badge" id="global-counter" title="総来訪者数">
+                <span class="counter-label">👀 Total Visits:</span>
+                <div class="global-counter-value" id="global-counter-value">
+                    <span class="counter-digit offline-dash">ー</span>
+                </div>
+            </div>
+        </div>
+    </header>
 
-        <div class="footer-brand">
-            Eggscalibur Simulator &bull; Backpack Battles Verification
+    <div class="app-container">
+        <!-- 左カラム: パターン & パレット -->
+        <aside class="panel left-panel">
+            <div class="panel-title">
+                <span>パターン選択</span>
+                <span class="badge" id="badgeActiveMode">全解放</span>
+            </div>
+
+            <div class="challenge-card">
+                <select id="selectChallenge" class="challenge-select"></select>
+                <div id="challengeDesc" class="challenge-desc"></div>
+                <div class="challenge-meta">
+                    <span class="badge" id="badgeMode">モード: フリー</span>
+                    <span class="badge" id="badgeBagLimits">バッグ制限なし</span>
+                </div>
+            </div>
+
+            <!-- アイテムパレット -->
+            <div class="palette-section" id="itemPaletteSection">
+                <div class="palette-section-title">登場アイテム (ドラッグ＆ドロップで配置 / 右クリックで回転)</div>
+                <div class="palette-grid" id="itemPaletteList"></div>
+            </div>
+
+
+            <!-- 特殊バッグパレット -->
+            <div class="palette-section" id="bagPaletteSection">
+                <div class="palette-section-title">バッグタイル (バッグ構築モード用)</div>
+                <div class="palette-grid" id="bagPaletteList"></div>
+            </div>
+        </aside>
+
+        <!-- 中央カラム: 盤面 & リアルタイム戦闘 -->
+        <main class="panel center-panel">
+            <!-- 📱 スマホ専用クイックアクションカード -->
+            <div class="mobile-quick-card" id="mobileQuickCard">
+                <div class="mobile-quick-title">
+                    <span>👑 1位配置の即時確認</span>
+                    <span class="badge badge-mobile-pc">💻 PC推奨</span>
+                </div>
+                <button class="btn btn-primary btn-mobile-restore-top" id="btnMobileRestoreTop">
+                    <span class="btn-icon">👑</span>
+                    <span class="btn-text">この設問の1位の配置を復元</span>
+                </button>
+                <div class="mobile-quick-note">
+                    ※スマホでは手動配置操作はオフになっています。1位の配置を復元してシミュレーションをお試しください。
+                </div>
+            </div>
+
+            <!-- リアルタイムステータス表示 -->
+            <div class="status-bar-container">
+                <div class="metric-card heat">
+                    <div class="metric-header">
+                        <span>🔥 ヒート (CD +2%/個)</span>
+                        <span id="labelHeat">0</span>
+                    </div>
+                    <div class="metric-val" id="valHeat">0</div>
+                    <div class="metric-meta-row">
+                        <span class="meta-desc" id="subHeat">CD短縮: +0%</span>
+                    </div>
+                </div>
+
+                <div class="metric-card mana">
+                    <div class="metric-header">
+                        <span>🔮 マナ (エッグス: 11)</span>
+                        <span id="labelMana">0</span>
+                    </div>
+                    <div class="metric-val" id="valMana">0</div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill" id="barMana" style="width: 0%;"></div>
+                    </div>
+                    <div class="metric-meta-row">
+                        <span class="shortage-badge" id="cardManaMisses">マナ不足: 0回</span>
+                    </div>
+                </div>
+
+                <div class="metric-card stamina">
+                    <div class="metric-header">
+                        <span>⚡ スタミナ (エッグス: 1.3)</span>
+                        <span id="labelStamina">5.0 / 5.0</span>
+                    </div>
+                    <div class="metric-val" id="valStamina">5.0</div>
+                    <div class="metric-bar">
+                        <div class="metric-bar-fill" id="barStamina" style="width: 100%;"></div>
+                    </div>
+                    <div class="metric-meta-row">
+                        <span class="shortage-badge" id="cardStaminaMisses">スタミナ不足: 0回</span>
+                    </div>
+                </div>
+
+                <div class="timer-card">
+                    <div class="timer-label">経過時間</div>
+                    <div class="timer-val" id="valTimer">00.0s</div>
+                    <div class="timer-label">/ 50.0s</div>
+                </div>
+            </div>
+
+            <!-- 戦闘操作バー -->
+            <div class="control-bar">
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btnStartSim">▶ 戦闘開始 (50秒)</button>
+                    <button class="btn" id="btnInstantSim">⚡ 即時計算</button>
+                    <button class="btn" id="btnResetSim" disabled>↺ リセット</button>
+                </div>
+                    <select id="selectSimSpeed" class="speed-select" title="シミュレーション再生速度">
+                        <option value="0.5">速度: 0.5x</option>
+                        <option value="1">速度: 1x</option>
+                        <option value="2" selected>速度: 2x</option>
+                        <option value="5">速度: 5x</option>
+                        <option value="10">速度: 10x</option>
+                    </select>
+            </div>
+
+            <!-- アイテム移動 / バッグ移動 切替バー (バッグ構築モード時に表示) -->
+            <div class="mode-switch-bar" id="modeSwitchBar" style="display: none;">
+                <div class="mode-switch-title">
+                    <span class="mode-switch-icon">🎯</span>
+                    <span>操作モード:</span>
+                </div>
+                <div class="mode-switch-group">
+                    <button class="mode-switch-btn active" id="btnModeItem" type="button" title="武器・食べ物・アクセサリーをドラッグ＆ドロップで配置・移動">
+                        <span class="btn-icon">🍳</span>
+                        <span class="btn-text">アイテム移動モード</span>
+                    </button>
+                    <button class="mode-switch-btn" id="btnModeBag" type="button" title="配置済みバッグタイルをドラッグ移動・回転・削除">
+                        <span class="btn-icon">👜</span>
+                        <span class="btn-text">バッグ移動モード</span>
+                    </button>
+                </div>
+                <div class="mode-switch-hint" id="modeSwitchHint">
+                    盤面のアイテム（武器・食べ物・オーブ）を直接移動できます
+                </div>
+            </div>
+
+            <!-- 9x7 バックパック盤面 -->
+            <div class="board-container">
+                <div class="backpack-grid" id="backpackGrid">
+                    <!-- JavaScriptで63マス生成 -->
+                </div>
+            </div>
+
+            <!-- ゴミ箱 & 全削除エリア -->
+            <div class="trash-zone-row">
+                <div class="trash-bin-zone" id="trashBin" title="不要なアイテムをここにドラッグして個別削除">
+                    <div class="trash-bin-content">
+                        <span class="trash-bin-icon">🗑️</span>
+                        <div class="trash-bin-labels">
+                            <span class="trash-bin-title">ゴミ箱エリア</span>
+                            <span class="trash-bin-sub">不要なアイテムをドラッグ＆ドロップで削除</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-clear-all" id="btnClearBoard" title="盤面の全アイテムとバッグを一括削除">
+                    <span class="btn-clear-icon">💥</span>
+                    <span class="btn-clear-text">全削除</span>
+                </button>
+            </div>
+
+            <div style="font-size: 11px; color: var(--text-secondary); text-align: center;">
+                💡 <strong>操作方法:</strong> アイテム/バッグを<strong>右クリック</strong>または<strong>「R」キー</strong>で90度回転。ドラッグで移動、<strong>十字キー（↑↓←→）で一括移動</strong>、<strong>🗑️ ゴミ箱へドラッグで個別削除</strong>、<strong>💥 全削除</strong>で一括クリア。（※バッグ構築時は「アイテム移動」と「バッグ移動」を切替可能）
+            </div>
+        </main>
+
+        <!-- 右カラム: 結果・グラフ・リーダーボード -->
+        <aside class="panel">
+            <div class="panel-title">
+                <span>検証結果 & 分析</span>
+                <span style="font-size: 11px; color: #38bdf8;" id="statusIndicator">待機中</span>
+            </div>
+
+            <!-- スコア表示 -->
+            <div class="result-box">
+                <div class="score-display">
+                    <div class="label">50秒最終獲得ヒート</div>
+                    <div class="score-num" id="resFinalHeat">-</div>
+                </div>
+
+                <div class="buffs-mini-grid" id="resBuffsGrid">
+                    <div class="buff-chip buff-heat"><span>ヒート</span><strong id="bHeat">0</strong></div>
+                    <div class="buff-chip buff-mana"><span>マナ</span><strong id="bMana">0</strong></div>
+                    <div class="buff-chip buff-regen"><span>リジェネ</span><strong id="bRegen">0</strong></div>
+                    <div class="buff-chip buff-luck"><span>ラック</span><strong id="bLuck">0</strong></div>
+                    <div class="buff-chip buff-spikes"><span>トゲ</span><strong id="bSpikes">0</strong></div>
+                    <div class="buff-chip buff-vamp"><span>吸血</span><strong id="bVamp">0</strong></div>
+                    <div class="buff-chip buff-empower"><span>エンパ</span><strong id="bEmpower">0</strong></div>
+                </div>
+            </div>
+
+            <!-- 秒間ヒート推移グラフ -->
+            <div class="chart-container">
+                <canvas id="heatChart"></canvas>
+            </div>
+
+            <!-- リアルタイム戦闘ログ -->
+            <div class="logs-container" id="battleLogs">
+                <div style="color: var(--text-muted); font-size: 11px; text-align: center; margin-top: 40px;">
+                    戦闘開始ボタンを押すとログが表示されます
+                </div>
+            </div>
+
+            <!-- リーダーボード -->
+            <div class="panel-title" style="margin-top: 6px;">
+                <div class="lb-header-left" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span>リーダーボード</span>
+                    <span id="badgeCloudStatus" class="badge-cloud-status status-local" title="クリックして同期状態の詳細を確認">
+                        ⚠️ ローカル保存中
+                    </span>
+                    <button id="btnAdminAuth" class="btn-admin-auth" title="管理者認証">🔒</button>
+                    <span id="badgeAdminMode" class="badge-admin-mode" style="display: none;">
+                        🔓 管理中
+                        <button id="btnAdminViewRequests" class="btn-admin-requests" title="1位達成者からのアイテム構成リクエストを確認">
+                            📥 リクエスト (<span id="adminRequestCount">0</span>)
+                        </button>
+                        <button id="btnAdminLogout" class="btn-admin-logout" title="管理者モードを解除">解除</button>
+                    </span>
+                </div>
+                <button class="btn btn-primary" id="btnRestoreTop" style="padding: 3px 8px; font-size: 11px;">👑 1位の配置を復元</button>
+            </div>
+
+            <div class="leaderboard-list" id="leaderboardList">
+                <!-- スコア一覧 -->
+            </div>
+
+            <div class="submit-score-bar">
+                <input type="text" id="inputPlayerName" class="submit-input" placeholder="あなたのプレイヤー名" maxlength="12">
+                <button class="btn btn-success" id="btnSubmitScore" disabled>スコア登録</button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- クラウド同期状態・設定案内モーダル -->
+    <div id="modalCloudSync" class="app-modal" style="display: none;">
+        <div class="app-modal-backdrop" id="modalCloudSyncBackdrop"></div>
+        <div class="app-modal-content">
+            <div class="app-modal-header">
+                <h3 id="modalCloudSyncTitle" style="margin: 0; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                    🌐 リーダーボードの世界同期設定
+                </h3>
+                <button type="button" class="app-modal-close" id="btnModalCloudClose">&times;</button>
+            </div>
+            <div class="app-modal-body" id="modalCloudSyncBody">
+                <!-- JSで状態に応じた案内を動的生成 -->
+            </div>
+            <div class="app-modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnModalCloudDismiss">閉じる</button>
+            </div>
         </div>
     </div>
+
+    <!-- 📱 スマホ閲覧案内・PC推奨モーダル -->
+    <div id="modalMobileNotice" class="app-modal" style="display: none;">
+        <div class="app-modal-backdrop" id="modalMobileBackdrop"></div>
+        <div class="app-modal-content mobile-notice-card">
+            <div class="mobile-notice-header">
+                <div class="mobile-notice-icon-box">📱</div>
+                <div>
+                    <h3 class="mobile-notice-title">スマートフォンでご利用の方へ</h3>
+                    <div class="mobile-notice-badge">💻 PC環境推奨</div>
+                </div>
+                <button type="button" class="app-modal-close" id="btnMobileNoticeClose">&times;</button>
+            </div>
+            <div class="mobile-notice-body">
+                <p class="mobile-notice-desc">
+                    当シミュレーターはアイテムの回転やドラッグ＆ドロップなど細かな配置操作があるため、<strong>【PC環境推奨】</strong>となっております。
+                </p>
+                <div class="mobile-notice-features">
+                    <div class="feature-item allowed">
+                        <span class="feat-icon">✅</span>
+                        <div class="feat-text">
+                            <strong>1位の配置確認 ＆ シミュレーション実行</strong>
+                            <p>「👑 1位の配置を復元」ボタンから配置を読み込み、50秒戦闘や即時計算をそのままお楽しみいただけます。</p>
+                        </div>
+                    </div>
+                    <div class="feature-item restricted">
+                        <span class="feat-icon">🔒</span>
+                        <div class="feat-text">
+                            <strong>手動でのアイテム配置・移動操作（不可）</strong>
+                            <p>誤操作防止のため、スマートフォン環境では手動配置操作はオフとなっております。自由に配置を作成・編集される際はPC環境からアクセスしてください。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mobile-notice-footer">
+                <button type="button" class="btn btn-primary btn-mobile-confirm" id="btnMobileNoticeRestore">
+                    <span>👑</span>
+                    <span>1位の配置を復元して試す</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="btnMobileNoticeDismiss">
+                    理解して閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 👑 1位更新達成者限定・アイテム構成リクエストモーダル -->
+    <div id="modalItemRequest" class="app-modal" style="display: none;">
+        <div class="app-modal-backdrop" id="modalItemRequestBackdrop"></div>
+        <div class="app-modal-content item-request-modal-card">
+            <div class="item-request-header">
+                <div class="item-request-trophy">🏆</div>
+                <div>
+                    <h3 class="item-request-title">歴代1位スコア達成！おめでとうございます！</h3>
+                    <div class="item-request-subtitle">👑 1位達成者限定特典：アイテム構成リクエスト</div>
+                </div>
+            </div>
+            <div class="item-request-body">
+                <div class="item-request-banner">
+                    <span>🎉 設問「<strong id="reqModalChallengeName">-</strong>」にて、新記録 <strong><span id="reqModalHeat">-</span> heat</strong> を達成しました！</span>
+                </div>
+                <p class="item-request-desc">
+                    見事1位を獲得したあなたへの特典として、次回設問で追加してほしいアイテムやバッグ、個数調整などの構成リクエストを管理者に直接送ることができます。
+                </p>
+                <div class="item-request-form">
+                    <label for="inputItemRequestText" class="item-request-label">
+                        💡 追加・調整してほしいアイテム構成（最大300文字）
+                    </label>
+                    <textarea id="inputItemRequestText" class="item-request-textarea" placeholder="例: トウガラシをあと2個増やしてほしい、ニンニクやチーズなどの新食べ物を追加してほしい、スタミナバッグを1個増やしてほしい 等" maxlength="300" rows="3"></textarea>
+                    <div class="item-request-char-count"><span id="reqCharCount">0</span> / 300文字</div>
+                </div>
+            </div>
+            <div class="item-request-footer">
+                <button type="button" class="btn btn-primary btn-submit-request" id="btnSubmitItemRequest">
+                    🚀 リクエストを送信する
+                </button>
+                <button type="button" class="btn btn-secondary" id="btnSkipItemRequest">
+                    今はスキップして閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📥 管理者専用・アイテム構成リクエスト一覧確認モーダル -->
+    <div id="modalAdminRequests" class="app-modal" style="display: none;">
+        <div class="app-modal-backdrop" id="modalAdminRequestsBackdrop"></div>
+        <div class="app-modal-content admin-requests-modal-card">
+            <div class="app-modal-header" style="background: linear-gradient(135deg, #1e1b4b, #0f172a); border-bottom: 1px solid rgba(168, 85, 247, 0.3);">
+                <h3 style="margin: 0; font-size: 15px; display: flex; align-items: center; gap: 8px; color: #e9d5ff;">
+                    <span>📥</span> 1位達成者からのアイテム構成リクエスト一覧 (管理者専用)
+                </h3>
+                <button type="button" class="app-modal-close" id="btnModalAdminRequestsClose">&times;</button>
+            </div>
+            <div class="app-modal-body" style="padding: 16px; max-height: 70vh; overflow-y: auto;">
+                <div class="admin-requests-summary" style="margin-bottom: 12px; font-size: 12px; color: #cbd5e1; display: flex; justify-content: space-between; align-items: center;">
+                    <span>届いているリクエスト: <strong id="adminRequestsTotal" style="color: #a855f7;">0</strong> 件</span>
+                    <button type="button" class="btn btn-secondary" id="btnRefreshAdminRequests" style="padding: 4px 8px; font-size: 11px;">🔄 最新に更新</button>
+                </div>
+                <div id="adminRequestsListContainer" class="admin-requests-list">
+                    <!-- JSで動的生成 -->
+                </div>
+            </div>
+            <div class="app-modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnModalAdminRequestsDismiss">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- トースト通知コンテナ -->
+    <div id="toastContainer" class="toast-container"></div>
+
+
+    <!-- クラシックスクリプト読み込み (ローカルfile://でも確実に動作) -->
+    <script src="js/changelog.js?v=67"></script>
+    <script src="js/items.js?v=67"></script>
+    <script src="js/challenges.js?v=67"></script>
+    <script src="js/grid.js?v=67"></script>
+    <script src="js/simulator.js?v=67"></script>
+    <script src="js/firebase-config.js?v=67"></script>
+    <script src="js/leaderboard.js?v=67"></script>
+    <script src="js/app.js?v=67"></script>
 </body>
 </html>

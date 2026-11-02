@@ -196,7 +196,7 @@ header {
 /* Tooltip */
 .notice-tooltip {
     position: absolute;
-    top: calc(100% + 10px);
+    top: calc(100% + 2px); /* ピル直下に隙間なく配置 */
     left: 0;
     right: auto;
     width: 430px;
@@ -210,16 +210,28 @@ header {
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-6px);
+    transform: translateY(-4px);
     transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s ease;
     pointer-events: none;
+}
+
+/* ピルとツールチップ間の透明ホバーブリッジ（カーソル移動時のホバー判定途切れを完全防止） */
+.notice-tooltip::after {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: 0;
+    width: 100%;
+    height: 12px;
+    background: transparent;
+    pointer-events: auto;
 }
 
 /* Tooltip Arrow */
 .notice-tooltip::before {
     content: '';
     position: absolute;
-    top: -6px;
+    top: -5px;
     left: 28px;
     right: auto;
     width: 10px;
@@ -228,6 +240,7 @@ header {
     border-left: 1px solid rgba(245, 158, 11, 0.45);
     border-top: 1px solid rgba(245, 158, 11, 0.45);
     transform: rotate(45deg);
+    z-index: 1;
 }
 
 .header-notice-pill:hover .notice-tooltip,
@@ -1860,7 +1873,7 @@ canvas#heatChart {
 
 /* 📱 スマホPC推奨モーダルカード */
 .mobile-notice-card {
-    max-width: 520px;
+    max-width: 380px;
     width: 92%;
     border-radius: 16px;
     border: 1px solid rgba(245, 158, 11, 0.4);
@@ -2021,6 +2034,262 @@ canvas#heatChart {
     to { opacity: 0; transform: translateY(-8px) scale(0.95); }
 }
 
+/* 管理者リクエスト確認ボタン */
+.btn-admin-requests {
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    color: #f8fafc;
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 4px;
+}
+
+.btn-admin-requests:hover {
+    background: linear-gradient(135deg, #9333ea, #6366f1);
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+    transform: translateY(-1px);
+}
+
+/* 👑 1位達成者用アイテムリクエストモーダル */
+.item-request-modal-card {
+    max-width: 480px;
+    width: 92%;
+    border-radius: 16px;
+    border: 1px solid rgba(245, 158, 11, 0.6);
+    background: #0f172a;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 40px rgba(245, 158, 11, 0.25);
+    overflow: hidden;
+}
+
+.item-request-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.item-request-trophy {
+    font-size: 32px;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(234, 88, 12, 0.15));
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+}
+
+.item-request-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #fbbf24;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.item-request-subtitle {
+    font-size: 11px;
+    font-weight: 700;
+    color: #cbd5e1;
+    margin-top: 4px;
+}
+
+.item-request-body {
+    padding: 18px 20px;
+}
+
+.item-request-banner {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12.5px;
+    color: #fef3c7;
+    margin-bottom: 12px;
+}
+
+.item-request-desc {
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.55;
+    margin: 0 0 16px 0;
+}
+
+.item-request-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.item-request-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.item-request-textarea {
+    width: 100%;
+    background: #020617;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    color: #f8fafc;
+    resize: vertical;
+    box-sizing: border-box;
+    font-family: inherit;
+    line-height: 1.5;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.item-request-textarea:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+.item-request-char-count {
+    font-size: 10.5px;
+    color: #64748b;
+    text-align: right;
+    margin-top: 2px;
+}
+
+.item-request-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 20px;
+    background: #0f172a;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-submit-request {
+    width: 100%;
+    padding: 12px;
+    font-size: 13.5px;
+    font-weight: 700;
+    justify-content: center;
+    background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+}
+
+/* 📥 管理者専用リクエストモーダル */
+.admin-requests-modal-card {
+    max-width: 620px;
+    width: 95%;
+    border-radius: 16px;
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    background: #0b0f19;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 40px rgba(168, 85, 247, 0.15);
+    overflow: hidden;
+}
+
+.admin-requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.admin-req-card {
+    background: #111827;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 12px 14px;
+    transition: all 0.2s ease;
+}
+
+.admin-req-card:hover {
+    border-color: rgba(168, 85, 247, 0.4);
+    background: #171f38;
+}
+
+.admin-req-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.admin-req-badge {
+    background: rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    color: #c084fc;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+}
+
+.admin-req-user {
+    font-size: 12px;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.admin-req-score {
+    color: #ef4444;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 800;
+}
+
+.admin-req-time {
+    font-size: 10px;
+    color: #64748b;
+}
+
+.admin-req-content {
+    background: #030712;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #e2e8f0;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.admin-req-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.btn-delete-req {
+    background: transparent;
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 10.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-delete-req:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+}
+
 /* ========================================================
    📱 レスポンシブメディアクエリ (@media)
    ======================================================== */
@@ -2035,6 +2304,155 @@ canvas#heatChart {
     :root {
         --cell-size: 48px;
     }
+}
+
+/* スマホ・小型端末 (<= 768px) および force-mobile-view 強制スマホモード */
+body.force-mobile-view {
+    max-width: 414px;
+    margin: 0 auto;
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+    --cell-size: 38px;
+    --grid-gap: 1px;
+    overflow-x: hidden;
+    background-color: var(--bg-body);
+}
+
+body.force-mobile-view header {
+    padding: 10px 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+}
+
+body.force-mobile-view .logo-area {
+    justify-content: space-between;
+    width: 100%;
+}
+
+body.force-mobile-view .logo-title-row {
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+body.force-mobile-view .logo-text h1 {
+    font-size: 17px;
+}
+
+body.force-mobile-view .header-right-group {
+    justify-content: space-between;
+    width: 100%;
+}
+
+body.force-mobile-view .app-container {
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    gap: 12px;
+    min-height: auto;
+}
+
+body.force-mobile-view .panel.center-panel {
+    order: 1; /* ① 盤面 & 戦闘 & 1位復元クイックボタン (最上部配置) */
+    max-height: none;
+    padding: 12px;
+    width: 100%;
+}
+
+body.force-mobile-view .panel.left-panel {
+    order: 2; /* ② パターン選択 */
+    max-height: none;
+    padding: 12px;
+}
+
+body.force-mobile-view .panel:last-child {
+    order: 3; /* ③ 結果 & リーダーボード */
+    max-height: none;
+    padding: 12px;
+}
+
+body.force-mobile-view .mobile-quick-card {
+    display: block;
+}
+
+body.force-mobile-view .palette-section {
+    opacity: 0.6;
+    filter: grayscale(0.2);
+}
+
+body.force-mobile-view .palette-section-title {
+    font-size: 11px;
+}
+
+body.force-mobile-view .trash-zone-row {
+    display: none !important;
+}
+
+body.force-mobile-view .board-container {
+    padding: 6px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+}
+
+body.force-mobile-view .backpack-grid {
+    padding: 2px;
+    border-radius: 6px;
+}
+
+body.force-mobile-view .status-bar-container {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+body.force-mobile-view .metric-card,
+body.force-mobile-view .timer-card {
+    min-height: 64px;
+    padding: 6px 8px;
+}
+
+body.force-mobile-view .metric-val {
+    font-size: 17px;
+}
+
+body.force-mobile-view .timer-val {
+    font-size: 19px;
+}
+
+body.force-mobile-view .control-bar {
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+}
+
+body.force-mobile-view .btn-group {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 0.8fr;
+    gap: 6px;
+}
+
+body.force-mobile-view .btn-group .btn {
+    padding: 10px 6px;
+    font-size: 12px;
+    justify-content: center;
+}
+
+body.force-mobile-view .speed-select {
+    width: 100%;
+    text-align: center;
+    padding: 8px;
+}
+
+body.force-mobile-view .notice-tooltip,
+body.force-mobile-view .changelog-tooltip {
+    left: 4px !important;
+    right: 4px !important;
+    width: auto !important;
+    max-width: calc(100vw - 16px) !important;
 }
 
 /* スマホ・小型端末 (<= 768px) */
@@ -2085,17 +2503,17 @@ canvas#heatChart {
     }
 
     /* パネルの表示順序最適化 */
-    .panel.left-panel {
-        order: 1; /* ① パターン選択 */
-        max-height: none;
-        padding: 12px;
-    }
-
     .panel.center-panel {
-        order: 2; /* ② 盤面 & 戦闘 */
+        order: 1; /* ① 盤面 & 戦闘 & 1位復元クイックボタン (最上部配置) */
         max-height: none;
         padding: 12px;
         width: 100%;
+    }
+
+    .panel.left-panel {
+        order: 2; /* ② パターン選択 */
+        max-height: none;
+        padding: 12px;
     }
 
     .panel:last-child {
@@ -2199,6 +2617,326 @@ canvas#heatChart {
         font-size: 11px;
         padding: 8px 4px;
     }
+}
+
+/* ========================================================
+   👑 1位達成者アイテム構成リクエスト & 📥 管理者確認モーダル スタイル
+   ======================================================== */
+
+/* 管理者専用リクエスト一覧ボタン */
+.btn-admin-requests {
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    border: 1px solid #a855f7;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.35);
+}
+.btn-admin-requests:hover {
+    background: linear-gradient(135deg, #9333ea, #6366f1);
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
+    transform: translateY(-1px);
+}
+
+/* モーダル基本構造 */
+.app-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 99999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.app-modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(4, 7, 15, 0.82);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.app-modal-content {
+    position: relative;
+    z-index: 2;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 520px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(245, 158, 11, 0.15);
+    animation: modalPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPopIn {
+    0% { opacity: 0; transform: scale(0.92) translateY(12px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* 👑 1位リクエストモーダル */
+.item-request-modal-card {
+    border: 2px solid #f59e0b;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 35px rgba(245, 158, 11, 0.3);
+}
+
+.item-request-header {
+    background: linear-gradient(135deg, #78350f, #451a03);
+    border-bottom: 1px solid rgba(245, 158, 11, 0.4);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.item-request-trophy {
+    font-size: 38px;
+    filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.7));
+    animation: trophyBounce 1.6s infinite ease-in-out;
+}
+
+@keyframes trophyBounce {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-4px) rotate(4deg); }
+}
+
+.item-request-title {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 800;
+    color: #fef3c7;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.item-request-subtitle {
+    font-size: 12px;
+    font-weight: 700;
+    color: #fbbf24;
+    margin-top: 3px;
+}
+
+.item-request-body {
+    padding: 20px;
+}
+
+.item-request-banner {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #fef08a;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.item-request-desc {
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #cbd5e1;
+    margin-bottom: 16px;
+}
+
+.item-request-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.item-request-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.item-request-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: #090d16;
+    border: 1.5px solid #334155;
+    border-radius: 8px;
+    color: #f8fafc;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 10px 12px;
+    resize: vertical;
+    transition: all 0.2s;
+}
+
+.item-request-textarea:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+
+.item-request-char-count {
+    text-align: right;
+    font-size: 11px;
+    color: #94a3b8;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.item-request-footer {
+    padding: 14px 20px;
+    background: #090d16;
+    border-top: 1px solid #1e293b;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.btn-submit-request {
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+    font-size: 13.5px;
+    font-weight: 700;
+}
+
+/* 📥 管理者専用リクエストモーダル */
+.admin-requests-modal-card {
+    max-width: 620px;
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(168, 85, 247, 0.25);
+}
+
+.app-modal-header {
+    padding: 12px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.app-modal-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    transition: color 0.15s;
+}
+.app-modal-close:hover {
+    color: #f8fafc;
+}
+
+.app-modal-footer {
+    padding: 10px 18px;
+    background: #090d16;
+    border-top: 1px solid #1e293b;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.admin-requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.admin-request-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-left: 4px solid #a855f7;
+    border-radius: 6px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.2s;
+}
+.admin-request-card:hover {
+    border-color: #475569;
+}
+
+.admin-req-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+}
+
+.admin-req-challenge-badge {
+    background: #3b0764;
+    color: #d8b4fe;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid #6b21a8;
+}
+
+.admin-req-meta {
+    font-size: 11.5px;
+    color: #94a3b8;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.admin-req-player {
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.admin-req-heat {
+    color: #f59e0b;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+}
+
+.admin-req-content {
+    background: #090d16;
+    border: 1px solid #1e293b;
+    border-radius: 4px;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    color: #e2e8f0;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.admin-req-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: #64748b;
+}
+
+.btn-delete-req {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-delete-req:hover {
+    background: rgba(239, 68, 68, 0.35);
+    color: #ffffff;
 }
 
 

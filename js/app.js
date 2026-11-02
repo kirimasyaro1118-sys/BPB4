@@ -235,7 +235,28 @@ class App {
             btnMobileNoticeClose: document.getElementById('btnMobileNoticeClose'),
             btnMobileNoticeDismiss: document.getElementById('btnMobileNoticeDismiss'),
             btnMobileNoticeRestore: document.getElementById('btnMobileNoticeRestore'),
-            toastContainer: document.getElementById('toastContainer')
+            toastContainer: document.getElementById('toastContainer'),
+
+            // 👑 1位達成者アイテムリクエスト関連DOM
+            btnAdminViewRequests: document.getElementById('btnAdminViewRequests'),
+            adminRequestCount: document.getElementById('adminRequestCount'),
+            modalItemRequest: document.getElementById('modalItemRequest'),
+            modalItemRequestBackdrop: document.getElementById('modalItemRequestBackdrop'),
+            reqModalChallengeName: document.getElementById('reqModalChallengeName'),
+            reqModalHeat: document.getElementById('reqModalHeat'),
+            inputItemRequestText: document.getElementById('inputItemRequestText'),
+            reqCharCount: document.getElementById('reqCharCount'),
+            btnSubmitItemRequest: document.getElementById('btnSubmitItemRequest'),
+            btnSkipItemRequest: document.getElementById('btnSkipItemRequest'),
+
+            // 📥 管理者専用リクエスト一覧DOM
+            modalAdminRequests: document.getElementById('modalAdminRequests'),
+            modalAdminRequestsBackdrop: document.getElementById('modalAdminRequestsBackdrop'),
+            btnModalAdminRequestsClose: document.getElementById('btnModalAdminRequestsClose'),
+            btnModalAdminRequestsDismiss: document.getElementById('btnModalAdminRequestsDismiss'),
+            btnRefreshAdminRequests: document.getElementById('btnRefreshAdminRequests'),
+            adminRequestsTotal: document.getElementById('adminRequestsTotal'),
+            adminRequestsListContainer: document.getElementById('adminRequestsListContainer')
         };
 
         this.renderGridCells();
@@ -415,6 +436,54 @@ class App {
             });
         }
 
+        // 管理者リクエスト確認ボタン
+        if (this.dom.btnAdminViewRequests) {
+            this.dom.btnAdminViewRequests.addEventListener('click', () => {
+                this.openAdminRequestsModal();
+            });
+        }
+
+        // 👑 1位リクエストモーダルのイベント
+        if (this.dom.inputItemRequestText) {
+            this.dom.inputItemRequestText.addEventListener('input', (e) => {
+                if (this.dom.reqCharCount) {
+                    this.dom.reqCharCount.textContent = e.target.value.length;
+                }
+            });
+        }
+        if (this.dom.btnSubmitItemRequest) {
+            this.dom.btnSubmitItemRequest.addEventListener('click', () => {
+                this.submitItemRequest();
+            });
+        }
+        if (this.dom.btnSkipItemRequest) {
+            this.dom.btnSkipItemRequest.addEventListener('click', () => {
+                this.closeItemRequestModal();
+            });
+        }
+        if (this.dom.modalItemRequestBackdrop) {
+            this.dom.modalItemRequestBackdrop.addEventListener('click', () => {
+                this.closeItemRequestModal();
+            });
+        }
+
+        // 📥 管理者リクエスト確認モーダルのイベント
+        if (this.dom.btnModalAdminRequestsClose) {
+            this.dom.btnModalAdminRequestsClose.addEventListener('click', () => this.closeAdminRequestsModal());
+        }
+        if (this.dom.btnModalAdminRequestsDismiss) {
+            this.dom.btnModalAdminRequestsDismiss.addEventListener('click', () => this.closeAdminRequestsModal());
+        }
+        if (this.dom.modalAdminRequestsBackdrop) {
+            this.dom.modalAdminRequestsBackdrop.addEventListener('click', () => this.closeAdminRequestsModal());
+        }
+        if (this.dom.btnRefreshAdminRequests) {
+            this.dom.btnRefreshAdminRequests.addEventListener('click', () => {
+                this.renderAdminRequestsList();
+                this.showToast('リクエスト一覧を更新しました');
+            });
+        }
+
         // 操作モード切替ボタン (アイテム移動 / バッグ移動)
         if (this.dom.btnModeItem) {
             this.dom.btnModeItem.addEventListener('click', () => this.setEditMode('item'));
@@ -521,21 +590,54 @@ class App {
             }
         });
 
-        // ヘッダー注意書きツールチップのインタラクション
-        const noticePill = document.querySelector('.header-notice-pill');
-        if (noticePill) {
-            noticePill.addEventListener('mouseenter', () => noticePill.classList.add('tooltip-open'));
-            noticePill.addEventListener('mouseleave', () => noticePill.classList.remove('tooltip-open'));
-            noticePill.addEventListener('click', (e) => {
+        // ウィンドウリサイズ時に盤面とアイテムのスケールをリアルタイム同期（スマホ/PC切替対応）
+        window.addEventListener('resize', () => {
+            this.renderBoard();
+        });
+
+        // ヘッダー注意書き・更新履歴ツールチップのインタラクション
+        const headerPills = document.querySelectorAll('.header-notice-pill');
+        headerPills.forEach(pill => {
+            let closeTimeout = null;
+
+            const openTooltip = () => {
+                if (closeTimeout) {
+                    clearTimeout(closeTimeout);
+                    closeTimeout = null;
+                }
+                pill.classList.add('tooltip-open');
+            };
+
+            const closeTooltipWithDelay = () => {
+                if (closeTimeout) clearTimeout(closeTimeout);
+                closeTimeout = setTimeout(() => {
+                    pill.classList.remove('tooltip-open');
+                    closeTimeout = null;
+                }, 180); // 180msの猶予時間でカーソル移動中も絶対に閉じない
+            };
+
+            pill.addEventListener('mouseenter', openTooltip);
+            pill.addEventListener('mouseleave', closeTooltipWithDelay);
+
+            // クリックでの固定トグル（じっくり読んだりスクロールしたい時）
+            pill.addEventListener('click', (e) => {
                 e.stopPropagation();
-                noticePill.classList.toggle('tooltip-open');
+                // 他のピルは閉じる
+                headerPills.forEach(other => {
+                    if (other !== pill) other.classList.remove('tooltip-open');
+                });
+                pill.classList.toggle('tooltip-open');
             });
-            window.addEventListener('click', (e) => {
-                if (!noticePill.contains(e.target)) {
-                    noticePill.classList.remove('tooltip-open');
+        });
+
+        // 画面外クリックですべてのツールチップを閉じる
+        window.addEventListener('click', (e) => {
+            headerPills.forEach(pill => {
+                if (!pill.contains(e.target)) {
+                    pill.classList.remove('tooltip-open');
                 }
             });
-        }
+        });
 
         // グリッドおよびウィンドウのマウスイベント（ドラッグ＆ドロップ・ゴースト追従）
         window.addEventListener('mousemove', (e) => this.onGlobalMouseMove(e));
@@ -708,8 +810,13 @@ class App {
         const oldElements = this.dom.backpackGrid.querySelectorAll('.placed-item, .placed-bag, .star-indicator');
         oldElements.forEach(el => el.remove());
 
-        const cellSize = 56;
-        const gap = 2;
+        // 実際のDOM上のセルサイズと隙間を動的に取得（PC/スマホのどんな画面幅でも1pxのズレなく完全同期）
+        const sampleCell = this.dom.backpackGrid.querySelector('.grid-cell');
+        const cellSize = sampleCell ? sampleCell.offsetWidth : (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell-size')) || 56);
+        const gap = (sampleCell && sampleCell.nextElementSibling)
+            ? Math.max(0, sampleCell.nextElementSibling.offsetLeft - sampleCell.offsetLeft - cellSize)
+            : (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--grid-gap')) || 2);
+        const gridPadding = sampleCell ? sampleCell.offsetLeft : 4;
 
         // グリッドに現在の操作モードクラスを同期
         this.dom.backpackGrid.classList.toggle('edit-mode-item', this.editMode === 'item');
@@ -723,8 +830,8 @@ class App {
             bagEl.dataset.instanceId = bag.instanceId;
             bagEl.id = `bag_${bag.instanceId}`;
 
-            bagEl.style.left = `${bag.col * (cellSize + gap) + 4}px`;
-            bagEl.style.top = `${bag.row * (cellSize + gap) + 4}px`;
+            bagEl.style.left = `${bag.col * (cellSize + gap) + gridPadding}px`;
+            bagEl.style.top = `${bag.row * (cellSize + gap) + gridPadding}px`;
 
             for (let i = 0; i < bag.coords.length; i++) {
                 const [dx, dy] = bag.coords[i];
@@ -814,8 +921,8 @@ class App {
             }
 
             // 左上オフセット計算
-            itemEl.style.left = `${item.col * (cellSize + gap) + 4}px`;
-            itemEl.style.top = `${item.row * (cellSize + gap) + 4}px`;
+            itemEl.style.left = `${item.col * (cellSize + gap) + gridPadding}px`;
+            itemEl.style.top = `${item.row * (cellSize + gap) + gridPadding}px`;
 
             // 各マスをレンダリング
             for (let i = 0; i < item.coords.length; i++) {
@@ -1250,6 +1357,11 @@ class App {
      * 盤面上のアイテムをその場で90度回転（カーソル直下にアイテムマスを維持するピボット補正＆壁際補正あり）
      */
     rotateItemOnBoard(instanceId, e = null) {
+        if (this.isMobileDevice()) {
+            this.showToast('スマホでは手動配置・回転操作はオフになっています（PC環境推奨）。');
+            return;
+        }
+
         const item = this.grid.placedItems.find(i => i.instanceId === instanceId);
         if (!item) return;
 
@@ -1325,6 +1437,11 @@ class App {
      * 盤面上のバッグをその場で90度回転（カーソル直下にバッグマスを維持するピボット補正＆壁キックあり）
      */
     rotateBagOnBoard(instanceId, e = null) {
+        if (this.isMobileDevice()) {
+            this.showToast('スマホでは手動配置・回転操作はオフになっています（PC環境推奨）。');
+            return;
+        }
+
         const bag = this.grid.placedBags.find(b => b.instanceId === instanceId);
         if (!bag) return;
 
@@ -1839,7 +1956,17 @@ class App {
 
         if (result.success) {
             this.dom.btnSubmitScore.disabled = true;
-            if (result.isUpdate) {
+            if (result.isNewTop) {
+                // 👑 歴代1位を更新！アイテム構成リクエストモーダルを開く
+                this.pendingTopEntry = {
+                    scoreId: result.entry.id,
+                    challengeId: ch.id,
+                    challengeName: ch.name,
+                    playerName: playerName,
+                    heat: result.entry.heat
+                };
+                this.openItemRequestModal(this.pendingTopEntry);
+            } else if (result.isUpdate) {
                 alert(`🎉 自己ベスト更新！\nプレイヤー「${playerName}」の過去スコア (${result.oldHeat} heat) を削除し、新記録 [ヒート: ${result.entry.heat}] で更新しました！`);
             } else {
                 alert(`スコア [ヒート: ${result.entry.heat}] をランキングに登録しました！`);
@@ -1873,6 +2000,12 @@ class App {
         }
         if (this.dom.badgeAdminMode) {
             this.dom.badgeAdminMode.style.display = isAdmin ? 'inline-flex' : 'none';
+        }
+        if (this.dom.btnAdminViewRequests) {
+            this.dom.btnAdminViewRequests.style.display = isAdmin ? 'inline-flex' : 'none';
+            if (isAdmin && this.dom.adminRequestCount) {
+                this.dom.adminRequestCount.textContent = this.leaderboard.getItemRequestCount();
+            }
         }
 
         this.dom.leaderboardList.innerHTML = '';
@@ -2061,15 +2194,15 @@ service cloud.firestore {
     /**
      * 1位の配置をワンクリックで復元
      */
-    restoreTopPlacement() {
+    restoreTopPlacement(skipConfirm = false) {
         const ch = this.challenges.getActiveChallenge();
         const top = this.leaderboard.getTopEntry(ch.id);
         if (!top) {
-            alert('この設問にはまだ1位の記録がありません！');
+            this.showToast('この設問にはまだ1位の記録がありません！');
             return;
         }
 
-        if (confirm(`👑 1位「${top.playerName}」さんの配置 (ヒート: ${top.heat}) を盤面に復元しますか？`)) {
+        if (skipConfirm || confirm(`👑 1位「${top.playerName}」さんの配置 (ヒート: ${top.heat}) を盤面に復元しますか？`)) {
             this.grid.deserialize(top.gridData);
             this.resetSimulation();
             this.showToast(`👑 1位「${top.playerName}」さんの配置を復元しました！`);
@@ -2078,10 +2211,11 @@ service cloud.firestore {
 
     // === 📱 スマホ対応・PC推奨モーダル機能 ===
     isMobileDevice() {
+        if (window.location.search.includes('mobile=1')) return true;
         const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
         const isNarrow = window.innerWidth <= 768;
         const isMobileUA = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '');
-        return (isNarrow && hasTouch) || isMobileUA || isNarrow;
+        return isNarrow || isMobileUA || (hasTouch && isNarrow);
     }
 
     showToast(message) {
@@ -2097,9 +2231,9 @@ service cloud.firestore {
     }
 
     initMobileFeatures() {
-        // スマホ用クイックカードの「1位の配置を復元」ボタン
+        // スマホ用クイックカードの「1位の配置を復元」ボタン (確認不要で即復元)
         if (this.dom.btnMobileRestoreTop) {
-            this.dom.btnMobileRestoreTop.addEventListener('click', () => this.restoreTopPlacement());
+            this.dom.btnMobileRestoreTop.addEventListener('click', () => this.restoreTopPlacement(true));
         }
 
         // ヘッダーのPC推奨案内ボタン
@@ -2118,22 +2252,26 @@ service cloud.firestore {
             this.dom.modalMobileBackdrop.addEventListener('click', () => this.closeMobileNoticeModal());
         }
 
-        // モーダル内の「👑 1位の配置を復元して試す」ボタン
+        // モーダル内の「👑 1位の配置を復元して試す」ボタン (確認不要で即復元)
         if (this.dom.btnMobileNoticeRestore) {
             this.dom.btnMobileNoticeRestore.addEventListener('click', () => {
                 this.closeMobileNoticeModal();
-                this.restoreTopPlacement();
+                this.restoreTopPlacement(true);
             });
         }
 
-        // 初回アクセス時の自動ポップアップ（スマホ端末時のみ）
+        // スマホ端末判定時の処理 & 自動ポップアップ
         if (this.isMobileDevice()) {
+            document.body.classList.add('force-mobile-view');
+            setTimeout(() => this.renderBoard(), 50);
+
             const seen = sessionStorage.getItem('bpb_mobile_notice_seen');
-            if (!seen) {
+            const forceMobile = window.location.search.includes('mobile=1');
+            if (!seen || forceMobile) {
                 setTimeout(() => {
                     this.openMobileNoticeModal();
-                    sessionStorage.setItem('bpb_mobile_notice_seen', 'true');
-                }, 400);
+                    if (!forceMobile) sessionStorage.setItem('bpb_mobile_notice_seen', 'true');
+                }, 300);
             }
         }
     }
@@ -2148,6 +2286,120 @@ service cloud.firestore {
         if (this.dom.modalMobileNotice) {
             this.dom.modalMobileNotice.style.display = 'none';
         }
+    }
+
+    // === 👑 1位達成者アイテムリクエストモーダル制御 ===
+    openItemRequestModal(entry) {
+        if (!this.dom.modalItemRequest || !entry) return;
+        if (this.dom.reqModalChallengeName) this.dom.reqModalChallengeName.textContent = entry.challengeName;
+        if (this.dom.reqModalHeat) this.dom.reqModalHeat.textContent = entry.heat;
+        if (this.dom.inputItemRequestText) this.dom.inputItemRequestText.value = '';
+        if (this.dom.reqCharCount) this.dom.reqCharCount.textContent = '0';
+        this.dom.modalItemRequest.style.display = 'flex';
+    }
+
+    closeItemRequestModal() {
+        if (this.dom.modalItemRequest) {
+            this.dom.modalItemRequest.style.display = 'none';
+        }
+        this.pendingTopEntry = null;
+    }
+
+    submitItemRequest() {
+        if (!this.pendingTopEntry) {
+            this.closeItemRequestModal();
+            return;
+        }
+
+        const text = this.dom.inputItemRequestText ? this.dom.inputItemRequestText.value.trim() : '';
+        if (!text) {
+            alert('リクエスト内容を入力してください（スキップする場合は「今はスキップして閉じる」を押してください）。');
+            return;
+        }
+
+        const { challengeId, challengeName, playerName, heat, scoreId } = this.pendingTopEntry;
+        const req = this.leaderboard.addItemRequest(challengeId, challengeName, playerName, heat, text, scoreId);
+
+        if (req) {
+            this.closeItemRequestModal();
+            this.showToast('🚀 アイテム構成リクエストを送信しました！ありがとうございます！');
+            alert(`🎉 アイテム構成リクエストを送信しました！\n管理者へ届けられ、今後のアップデートや新設問の参考にさせていただきます。ご協力ありがとうございました！`);
+        }
+    }
+
+    // === 📥 管理者専用リクエスト確認モーダル制御 ===
+    openAdminRequestsModal() {
+        if (!this.leaderboard.isAdmin()) {
+            alert('管理者モード時のみ確認できます。');
+            return;
+        }
+        if (!this.dom.modalAdminRequests) return;
+        this.renderAdminRequestsList();
+        this.dom.modalAdminRequests.style.display = 'flex';
+    }
+
+    closeAdminRequestsModal() {
+        if (this.dom.modalAdminRequests) {
+            this.dom.modalAdminRequests.style.display = 'none';
+        }
+    }
+
+    renderAdminRequestsList() {
+        if (!this.leaderboard.isAdmin()) return;
+        const requests = this.leaderboard.getItemRequests();
+        const container = this.dom.adminRequestsListContainer;
+        if (this.dom.adminRequestsTotal) {
+            this.dom.adminRequestsTotal.textContent = requests.length;
+        }
+        if (this.dom.adminRequestCount) {
+            this.dom.adminRequestCount.textContent = requests.length;
+        }
+        if (!container) return;
+
+        if (requests.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; color: #64748b; padding: 30px; font-size: 13px;">
+                    現在届いている1位達成者からのアイテムリクエストはありません
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = '';
+        requests.forEach(req => {
+            const card = document.createElement('div');
+            card.className = 'admin-req-card';
+
+            const safeUser = this.escapeHtml(req.playerName || '名無し職人');
+            const safeCh = this.escapeHtml(req.challengeName || req.challengeId || '設問');
+            const safeText = this.escapeHtml(req.requestText || '');
+            const safeTime = this.escapeHtml(req.timestamp || '');
+
+            card.innerHTML = `
+                <div class="admin-req-header">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span class="admin-req-badge">📋 ${safeCh}</span>
+                        <span class="admin-req-user">👑 ${safeUser}</span>
+                        <span class="admin-req-score">${req.heat} 🔥</span>
+                    </div>
+                    <span class="admin-req-time">🕒 ${safeTime}</span>
+                </div>
+                <div class="admin-req-content">${safeText}</div>
+                <div class="admin-req-footer">
+                    <button type="button" class="btn btn-delete-req" title="このリクエストを削除">🗑️ 削除</button>
+                </div>
+            `;
+
+            card.querySelector('.btn-delete-req').addEventListener('click', () => {
+                if (confirm(`【管理者】「${req.playerName}」さんのリクエスト（${safeTime}）を削除しますか？`)) {
+                    this.leaderboard.deleteItemRequest(req.id);
+                    this.renderAdminRequestsList();
+                    this.showToast('リクエストを削除しました');
+                }
+            });
+
+            container.appendChild(card);
+        });
     }
 
     // === 設問編集モーダル ===
