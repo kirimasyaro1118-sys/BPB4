@@ -2,6 +2,25 @@
 (function() {
     const ITEMS = window.ITEMS;
     const ITEM_TYPES = window.ITEM_TYPES;
+    const compareTopLeft = window.compareTopLeft || function(a, b) {
+        const getPos = item => {
+            const placed = item.placedItem || item;
+            const baseRow = placed.row !== undefined ? placed.row : 0;
+            const baseCol = placed.col !== undefined ? placed.col : 0;
+            const coords = placed.coords || [[0, 0]];
+            let minR = Infinity;
+            for (const [, dy] of coords) {
+                if (baseRow + dy < minR) minR = baseRow + dy;
+            }
+            let minC = Infinity;
+            for (const [dx, dy] of coords) {
+                if (baseRow + dy === minR && baseCol + dx < minC) minC = baseCol + dx;
+            }
+            return { row: minR, col: minC };
+        };
+        const pA = getPos(a), pB = getPos(b);
+        return pA.row !== pB.row ? pA.row - pB.row : pA.col - pB.col;
+    };
 
 class BattleSimulator {
     constructor(gridState, duration = 50.0) {
@@ -91,6 +110,9 @@ class BattleSimulator {
             };
         });
 
+        // 盤面上のアイテムをあらかじめ「上優先・左優先」で整列
+        runtimeItems.sort((a, b) => compareTopLeft(a.placedItem, b.placedItem));
+
         return {
             currentTime: 0.0,
             mana: 0,
@@ -143,6 +165,11 @@ class BattleSimulator {
             }
         }
 
+        // 同時に発動可能となったアイテム群を「上優先・左優先」でソートして発動
+        if (readyItems.length > 1) {
+            readyItems.sort((a, b) => compareTopLeft(a.placedItem, b.placedItem));
+        }
+
         // 3. 発動判定
         for (const item of readyItems) {
             this.triggerItem(item, state, currentTime, logs, onEvent);
@@ -174,6 +201,8 @@ class BattleSimulator {
 
                     // エッグスカリバーの星スロットに触れている「食べ物」アイテムを取得
                     const targetFoods = this.gridState.getStarredItems(item.placedItem, 'food');
+                    // エッグスの回転角度によらず、必ず盤面の上優先・左優先で整列
+                    targetFoods.sort(compareTopLeft);
                     
                     for (const foodItem of targetFoods) {
                         const foodRuntime = state.runtimeItems.find(r => r.instanceId === foodItem.instanceId);

@@ -216,6 +216,54 @@ function rotateStarSlots(starSlots, shapeRotationDeg = 90) {
     return starSlots.map(([x, y]) => [-y, x]);
 }
 
+/**
+ * アイテムの「上優先・左優先」判定用基準座標を取得
+ * 定義: アイテムが占有する全マスのうち、最上段（最小row）の中で最も左（最小col）にあるマスの絶対座標
+ * @param {Object} item placedItem または runtimeItem
+ * @returns {{ row: number, col: number }}
+ */
+function getItemTopLeftPos(item) {
+    if (!item) return { row: 999, col: 999 };
+    const placed = item.placedItem || item;
+    const baseRow = placed.row !== undefined ? placed.row : 0;
+    const baseCol = placed.col !== undefined ? placed.col : 0;
+    const coords = placed.coords || [[0, 0]];
+
+    let minRow = Infinity;
+    for (const [, dy] of coords) {
+        const r = baseRow + dy;
+        if (r < minRow) minRow = r;
+    }
+
+    let minCol = Infinity;
+    for (const [dx, dy] of coords) {
+        const r = baseRow + dy;
+        if (r === minRow) {
+            const c = baseCol + dx;
+            if (c < minCol) minCol = c;
+        }
+    }
+
+    return {
+        row: minRow === Infinity ? baseRow : minRow,
+        col: minCol === Infinity ? baseCol : minCol
+    };
+}
+
+/**
+ * 2つのアイテムを「上優先・左優先」で比較するソート関数
+ * まず上段ほど優先（row昇順）、同じ段なら左を優先（col昇順）
+ */
+function compareTopLeft(a, b) {
+    const posA = getItemTopLeftPos(a);
+    const posB = getItemTopLeftPos(b);
+
+    if (posA.row !== posB.row) {
+        return posA.row - posB.row;
+    }
+    return posA.col - posB.col;
+}
+
 // グローバルスコープにも公開 (クラシックスクリプト対応)
 if (typeof window !== 'undefined') {
     window.ITEM_TYPES = ITEM_TYPES;
@@ -223,5 +271,8 @@ if (typeof window !== 'undefined') {
     window.rotateShape = rotateShape;
     window.rotateStarSlots = rotateStarSlots;
     window.rotateItemWithStars = rotateItemWithStars;
+    window.getItemTopLeftPos = getItemTopLeftPos;
+    window.compareTopLeft = compareTopLeft;
 }
+
 

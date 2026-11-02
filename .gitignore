@@ -15,7 +15,7 @@ check_rank_changes.ps1
 extract*
 verify*
 find_*
-test_sim*
+test_*
 save_frames*
 frames_dump*
 play_video*

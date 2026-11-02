@@ -438,7 +438,13 @@ class GridManager {
             }
         }
 
-        return Array.from(matched.values());
+        const result = Array.from(matched.values());
+        // 星スロット走査順やエッグスの回転角度によらず、必ず盤面の上優先・左優先で整列
+        const cmp = (typeof compareTopLeft === 'function') ? compareTopLeft : (typeof window !== 'undefined' ? window.compareTopLeft : null);
+        if (cmp) {
+            result.sort(cmp);
+        }
+        return result;
     }
 
     /**
