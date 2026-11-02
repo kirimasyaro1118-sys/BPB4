@@ -1961,6 +1961,13 @@ canvas#heatChart {
     border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
+/* ⚠️ Twitter/アプリ内ブラウザ注意喚起（目立つハイライト） */
+.feature-item.warning {
+    background: rgba(245, 158, 11, 0.18);
+    border: 1.5px solid #f59e0b;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.2);
+}
+
 .feature-item .feat-icon {
     font-size: 16px;
     line-height: 1;
@@ -1973,6 +1980,8 @@ canvas#heatChart {
     margin-bottom: 2px;
 }
 
+.feature-item.warning strong { color: #fef08a; }
+.feature-item.warning p { color: #fde68a; font-weight: 500; }
 .feature-item.allowed strong { color: #34d399; }
 .feature-item.restricted strong { color: #f87171; }
 .feature-item p { color: #94a3b8; margin: 0; }
