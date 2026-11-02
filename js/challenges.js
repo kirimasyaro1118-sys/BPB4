@@ -256,11 +256,30 @@ const DEFAULT_CHALLENGES = [
         "mode": "free",
         "itemLimits": {
             "eggscalibur": 1,
-            "chili": 2,
+            "chili": 4,
             "banana": 2,
             "cupcake": 4,
             "blueberry": 4,
             "mana_orb": 3
+        },
+        "bagLimits": {
+            "leather_bag": 0,
+            "fanny_pack": 0,
+            "stamina_bag": 0
+        }
+    },
+    {
+        "id": "pattern_15",
+        "name": "パターン7’",
+        "description": "",
+        "mode": "free",
+        "itemLimits": {
+            "eggscalibur": 1,
+            "chili": 4,
+            "banana": 2,
+            "cupcake": 4,
+            "blueberry": 6,
+            "mana_orb": 4
         },
         "bagLimits": {
             "leather_bag": 0,
