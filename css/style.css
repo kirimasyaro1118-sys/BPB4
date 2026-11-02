@@ -2362,17 +2362,17 @@ body.force-mobile-view .app-container {
     min-height: auto;
 }
 
+body.force-mobile-view .panel.left-panel {
+    order: 1; /* ① パターン選択 */
+    max-height: none;
+    padding: 12px;
+}
+
 body.force-mobile-view .panel.center-panel {
-    order: 1; /* ① 盤面 & 戦闘 & 1位復元クイックボタン (最上部配置) */
+    order: 2; /* ② シミュレーション（ステータス・戦闘バー・盤面） */
     max-height: none;
     padding: 12px;
     width: 100%;
-}
-
-body.force-mobile-view .panel.left-panel {
-    order: 2; /* ② パターン選択 */
-    max-height: none;
-    padding: 12px;
 }
 
 body.force-mobile-view .panel:last-child {
@@ -2512,17 +2512,17 @@ body.force-mobile-view .changelog-tooltip {
     }
 
     /* パネルの表示順序最適化 */
+    .panel.left-panel {
+        order: 1; /* ① パターン選択 */
+        max-height: none;
+        padding: 12px;
+    }
+
     .panel.center-panel {
-        order: 1; /* ① 盤面 & 戦闘 & 1位復元クイックボタン (最上部配置) */
+        order: 2; /* ② シミュレーション（ステータス・戦闘バー・盤面） */
         max-height: none;
         padding: 12px;
         width: 100%;
-    }
-
-    .panel.left-panel {
-        order: 2; /* ② パターン選択 */
-        max-height: none;
-        padding: 12px;
     }
 
     .panel:last-child {
