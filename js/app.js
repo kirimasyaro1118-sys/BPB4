@@ -225,12 +225,23 @@ class App {
             modalCloudSyncBody: document.getElementById('modalCloudSyncBody'),
             btnModalCloudClose: document.getElementById('btnModalCloudClose'),
             btnModalCloudDismiss: document.getElementById('btnModalCloudDismiss'),
-            headerChangelogContent: document.getElementById('headerChangelogContent')
+            headerChangelogContent: document.getElementById('headerChangelogContent'),
+
+            // 📱 スマホ関連DOM要素
+            btnMobileHelp: document.getElementById('btnMobileHelp'),
+            btnMobileRestoreTop: document.getElementById('btnMobileRestoreTop'),
+            modalMobileNotice: document.getElementById('modalMobileNotice'),
+            modalMobileBackdrop: document.getElementById('modalMobileBackdrop'),
+            btnMobileNoticeClose: document.getElementById('btnMobileNoticeClose'),
+            btnMobileNoticeDismiss: document.getElementById('btnMobileNoticeDismiss'),
+            btnMobileNoticeRestore: document.getElementById('btnMobileNoticeRestore'),
+            toastContainer: document.getElementById('toastContainer')
         };
 
         this.renderGridCells();
         this.initChart();
         this.renderChangelog();
+        this.initMobileFeatures();
     }
 
     /**
@@ -954,6 +965,12 @@ class App {
     startDragFromPalette(e, itemId) {
         if (e.button !== 0) return; // 左クリックのみ
 
+        // 📱 スマホ環境では手動配置を無効化（PC推奨案内）
+        if (this.isMobileDevice()) {
+            this.showToast('スマホでは手動配置操作はオフになっています（PC環境推奨）。');
+            return;
+        }
+
         const def = ITEMS[itemId];
         const ch = this.challenges.getActiveChallenge();
         const isBag = def.type === ITEM_TYPES.BAG;
@@ -998,6 +1015,12 @@ class App {
 
     startDragFromBoard(e, itemOrBag) {
         if (e.button !== 0) return; // 左クリックのみ
+
+        // 📱 スマホ環境では手動移動・配置を無効化
+        if (this.isMobileDevice()) {
+            this.showToast('スマホでは手動配置操作はオフになっています（PC環境推奨）。');
+            return;
+        }
 
         const def = ITEMS[itemOrBag.itemId];
         const isBag = def?.type === ITEM_TYPES.BAG;
@@ -2049,6 +2072,81 @@ service cloud.firestore {
         if (confirm(`👑 1位「${top.playerName}」さんの配置 (ヒート: ${top.heat}) を盤面に復元しますか？`)) {
             this.grid.deserialize(top.gridData);
             this.resetSimulation();
+            this.showToast(`👑 1位「${top.playerName}」さんの配置を復元しました！`);
+        }
+    }
+
+    // === 📱 スマホ対応・PC推奨モーダル機能 ===
+    isMobileDevice() {
+        const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        const isNarrow = window.innerWidth <= 768;
+        const isMobileUA = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '');
+        return (isNarrow && hasTouch) || isMobileUA || isNarrow;
+    }
+
+    showToast(message) {
+        const container = this.dom.toastContainer || document.getElementById('toastContainer');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = 'toast-message';
+        toast.innerHTML = `<span>📱</span> <span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 3000);
+    }
+
+    initMobileFeatures() {
+        // スマホ用クイックカードの「1位の配置を復元」ボタン
+        if (this.dom.btnMobileRestoreTop) {
+            this.dom.btnMobileRestoreTop.addEventListener('click', () => this.restoreTopPlacement());
+        }
+
+        // ヘッダーのPC推奨案内ボタン
+        if (this.dom.btnMobileHelp) {
+            this.dom.btnMobileHelp.addEventListener('click', () => this.openMobileNoticeModal());
+        }
+
+        // モーダルの閉じるボタン
+        if (this.dom.btnMobileNoticeClose) {
+            this.dom.btnMobileNoticeClose.addEventListener('click', () => this.closeMobileNoticeModal());
+        }
+        if (this.dom.btnMobileNoticeDismiss) {
+            this.dom.btnMobileNoticeDismiss.addEventListener('click', () => this.closeMobileNoticeModal());
+        }
+        if (this.dom.modalMobileBackdrop) {
+            this.dom.modalMobileBackdrop.addEventListener('click', () => this.closeMobileNoticeModal());
+        }
+
+        // モーダル内の「👑 1位の配置を復元して試す」ボタン
+        if (this.dom.btnMobileNoticeRestore) {
+            this.dom.btnMobileNoticeRestore.addEventListener('click', () => {
+                this.closeMobileNoticeModal();
+                this.restoreTopPlacement();
+            });
+        }
+
+        // 初回アクセス時の自動ポップアップ（スマホ端末時のみ）
+        if (this.isMobileDevice()) {
+            const seen = sessionStorage.getItem('bpb_mobile_notice_seen');
+            if (!seen) {
+                setTimeout(() => {
+                    this.openMobileNoticeModal();
+                    sessionStorage.setItem('bpb_mobile_notice_seen', 'true');
+                }, 400);
+            }
+        }
+    }
+
+    openMobileNoticeModal() {
+        if (this.dom.modalMobileNotice) {
+            this.dom.modalMobileNotice.style.display = 'flex';
+        }
+    }
+
+    closeMobileNoticeModal() {
+        if (this.dom.modalMobileNotice) {
+            this.dom.modalMobileNotice.style.display = 'none';
         }
     }
 

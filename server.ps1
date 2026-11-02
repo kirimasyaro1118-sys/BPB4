@@ -14,7 +14,7 @@ try {
 
         $urlPath = $request.Url.LocalPath
         if ($urlPath -eq "/" -or [string]::IsNullOrEmpty($urlPath)) {
-            $urlPath = "/index.html"
+            $urlPath = "/index_app.html"
         }
 
         $localFilePath = Join-Path $baseDir ($urlPath.TrimStart("/").Replace("/", "\"))
@@ -33,20 +33,29 @@ try {
 
             $response.ContentType = $contentType
             $response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate")
-            $response.AddHeader("Pragma", "no-cache")
-            $response.AddHeader("Expires", "0")
             $bytes = [System.IO.File]::ReadAllBytes($localFilePath)
             $response.ContentLength64 = $bytes.Length
-            $response.OutputStream.Write($bytes, 0, $bytes.Length)
+
+            if ($request.HttpMethod -ne "HEAD") {
+                try {
+                    $response.OutputStream.Write($bytes, 0, $bytes.Length)
+                } catch {}
+            }
         } else {
             $response.StatusCode = 404
             $msg = [System.Text.Encoding]::UTF8.GetBytes("404 Not Found")
             $response.ContentLength64 = $msg.Length
-            $response.OutputStream.Write($msg, 0, $msg.Length)
+            if ($request.HttpMethod -ne "HEAD") {
+                try {
+                    $response.OutputStream.Write($msg, 0, $msg.Length)
+                } catch {}
+            }
         }
-        $response.Close()
+        try {
+            $response.Close()
+        } catch {}
     }
 } finally {
-    $listener.Stop()
-    $listener.Close()
+    try { $listener.Stop() } catch {}
+    try { $listener.Close() } catch {}
 }
