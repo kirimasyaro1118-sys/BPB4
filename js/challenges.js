@@ -286,6 +286,25 @@ const DEFAULT_CHALLENGES = [
             "fanny_pack": 0,
             "stamina_bag": 0
         }
+    },
+    {
+        "id": "pattern_16",
+        "name": "パターン8’",
+        "description": "",
+        "mode": "free",
+        "itemLimits": {
+            "eggscalibur": 2,
+            "chili": 10,
+            "banana": 4,
+            "cupcake": 0,
+            "blueberry": 6,
+            "mana_orb": 4
+        },
+        "bagLimits": {
+            "leather_bag": 0,
+            "fanny_pack": 0,
+            "stamina_bag": 0
+        }
     }
 ];
 
